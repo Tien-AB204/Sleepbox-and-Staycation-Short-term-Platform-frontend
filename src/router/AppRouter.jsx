@@ -20,6 +20,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import Home from "../pages/guest/Home";
 import Search from "../pages/guest/Search";
 import RoomDetail from "../pages/guest/RoomDetail";
+import BookingPage from "../pages/guest/BookingPage";
 
 // Các trang placeholder khác (có thể import thật khi bạn làm tiếp)
 const ForgotPassword = () => <div>Forgot Password</div>;
@@ -43,7 +44,20 @@ const AppRouter = () => (
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/email-verify" element={<EmailVerifyPage />} />
       </Route>
-      {/* Guest Routes */}
+
+      {/* Public Guest Routes (Không cần đăng nhập) */}
+      <Route element={<GuestLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/room/:id" element={<RoomDetail />} />
+      </Route>
+
+      {/* Search Route (Standalone Layout) */}
+      <Route path="/search" element={<Search />} />
+      
+      {/* Booking Route (Standalone Layout) */}
+      <Route path="/booking" element={<BookingPage />} />
+
+      {/* Protected Guest Routes (Cần đăng nhập - ví dụ: trang cá nhân, lịch sử đặt phòng) */}
       <Route
         element={
           <ProtectedRoute roles={["guest"]}>
@@ -51,11 +65,10 @@ const AppRouter = () => (
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Home />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/room/:id" element={<RoomDetail />} />
-        {/* ...other guest routes... */}
+        {/* Thêm các route cần bảo vệ của guest ở đây sau này */}
+        {/* <Route path="/profile" element={<Profile />} /> */}
       </Route>
+
       {/* Host Routes */}
       <Route
         element={
