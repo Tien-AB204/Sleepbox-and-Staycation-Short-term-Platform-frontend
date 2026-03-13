@@ -36,14 +36,28 @@ const AdminDashboard = () => <div>Admin Dashboard</div>;
 const AppRouter = () => (
   <Router>
     <Routes>
-      {/* Auth Routes */}
+      {/* ========================================== */}
+      {/* 1. AUTH ROUTES (Giao diện đăng nhập) */}
+      {/* ========================================== */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/email-verify" element={<EmailVerifyPage />} />
       </Route>
-      {/* Guest Routes */}
+
+      {/* ========================================== */}
+      {/* 2. PUBLIC GUEST ROUTES (Ai cũng xem được) */}
+      {/* ========================================== */}
+      <Route element={<GuestLayout />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/room/:id" element={<RoomDetail />} />
+      </Route>
+
+      {/* ========================================== */}
+      {/* 3. PRIVATE GUEST ROUTES (Bắt buộc đăng nhập) */}
+      {/* ========================================== */}
       <Route
         element={
           <ProtectedRoute roles={["guest"]}>
@@ -51,12 +65,13 @@ const AppRouter = () => (
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Home />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/room/:id" element={<RoomDetail />} />
-        {/* ...other guest routes... */}
+        {/* Chỗ này sau này sẽ chứa các trang như Wallet, Profile, History... */}
+        {/* <Route path="/wallet" element={<Wallet />} /> */}
       </Route>
-      {/* Host Routes */}
+
+      {/* ========================================== */}
+      {/* 4. HOST ROUTES */}
+      {/* ========================================== */}
       <Route
         element={
           <ProtectedRoute roles={["host"]}>
@@ -67,7 +82,10 @@ const AppRouter = () => (
         <Route path="/host/dashboard" element={<HostDashboard />} />
         {/* ...other host routes... */}
       </Route>
-      {/* Staff Routes */}
+
+      {/* ========================================== */}
+      {/* 5. STAFF ROUTES */}
+      {/* ========================================== */}
       <Route
         element={
           <ProtectedRoute roles={["staff"]}>
@@ -78,7 +96,10 @@ const AppRouter = () => (
         <Route path="/staff/check-in-out" element={<StaffCheckInOut />} />
         {/* ...other staff routes... */}
       </Route>
-      {/* Moderator Routes */}
+
+      {/* ========================================== */}
+      {/* 6. MODERATOR ROUTES */}
+      {/* ========================================== */}
       <Route
         element={
           <ProtectedRoute roles={["moderator"]}>
@@ -89,7 +110,10 @@ const AppRouter = () => (
         <Route path="/moderator/user-management" element={<ModeratorUserManagement />} />
         {/* ...other moderator routes... */}
       </Route>
-      {/* Admin Routes */}
+
+      {/* ========================================== */}
+      {/* 7. ADMIN ROUTES */}
+      {/* ========================================== */}
       <Route
         element={
           <ProtectedRoute roles={["admin"]}>
@@ -100,7 +124,10 @@ const AppRouter = () => (
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         {/* ...other admin routes... */}
       </Route>
-      {/* Common */}
+
+      {/* ========================================== */}
+      {/* 8. COMMON ROUTES */}
+      {/* ========================================== */}
       <Route path="/forbidden" element={<Forbidden />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
