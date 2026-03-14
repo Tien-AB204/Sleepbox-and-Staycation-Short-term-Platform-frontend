@@ -28,8 +28,21 @@ const EmailVerifyPage = () => <div>Email Verify</div>;
 const NotFound = () => <div>404 Not Found</div>;
 const Forbidden = () => <div>403 Forbidden</div>;
 
+// Host Pages
+import HostLoginPage from "../pages/host/HostLoginPage";
+import HostRegisterPage from "../pages/host/HostRegisterPage";
+import HostDashboardOverview from "../pages/host/HostDashboardOverview";
+import HostFacilities from "../pages/host/HostFacilities";
+import HostBookings from "../pages/host/HostBookings";
+import HostCalendar from "../pages/host/HostCalendar";
+import HostPricing from "../pages/host/HostPricing";
+import HostStaff from "../pages/host/HostStaff";
+import HostStatistics from "../pages/host/HostStatistics";
+import HostDisputes from "../pages/host/HostDisputes";
+import HostSleepbox from "../pages/host/HostSleepbox";
+import HostSettings from "../pages/host/HostSettings";
+
 // Host/Staff/Moderator/Admin placeholder
-const HostDashboard = () => <div>Host Dashboard</div>;
 const StaffCheckInOut = () => <div>Staff CheckInOut</div>;
 const ModeratorUserManagement = () => <div>Moderator User Management</div>;
 const AdminDashboard = () => <div>Admin Dashboard</div>;
@@ -53,9 +66,13 @@ const AppRouter = () => (
 
       {/* Search Route (Standalone Layout) */}
       <Route path="/search" element={<Search />} />
-      
+
       {/* Booking Route (Standalone Layout) */}
       <Route path="/booking" element={<BookingPage />} />
+
+      {/* Host Auth (Standalone - không cần đăng nhập) */}
+      <Route path="/host/login" element={<HostLoginPage />} />
+      <Route path="/host/register" element={<HostRegisterPage />} />
 
       {/* Protected Guest Routes (Cần đăng nhập - ví dụ: trang cá nhân, lịch sử đặt phòng) */}
       <Route
@@ -77,8 +94,16 @@ const AppRouter = () => (
           </ProtectedRoute>
         }
       >
-        <Route path="/host/dashboard" element={<HostDashboard />} />
-        {/* ...other host routes... */}
+        <Route path="/host/dashboard" element={<HostDashboardOverview />} />
+        <Route path="/host/facilities" element={<HostFacilities />} />
+        <Route path="/host/bookings" element={<HostBookings />} />
+        <Route path="/host/calendar" element={<HostCalendar />} />
+        <Route path="/host/pricing" element={<HostPricing />} />
+        <Route path="/host/staff" element={<HostStaff />} />
+        <Route path="/host/statistics" element={<HostStatistics />} />
+        <Route path="/host/disputes" element={<HostDisputes />} />
+        <Route path="/host/sleepboxes" element={<HostSleepbox />} />
+        <Route path="/host/settings" element={<HostSettings />} />
       </Route>
       {/* Staff Routes */}
       <Route
