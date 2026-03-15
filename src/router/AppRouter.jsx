@@ -20,9 +20,10 @@ import ProtectedRoute from "./ProtectedRoute";
 import Home from "../pages/guest/Home";
 import Search from "../pages/guest/Search";
 import RoomDetail from "../pages/guest/RoomDetail";
-import BookingPage from "../pages/guest/BookingPage";
+import BookingSummary from "../pages/guest/BookingSummary";
+import Profile from "../pages/guest/Profile";
 
-// Các trang placeholder khác (có thể import thật khi bạn làm tiếp)
+// Các trang placeholder khác
 const ForgotPassword = () => <div>Forgot Password</div>;
 const EmailVerifyPage = () => <div>Email Verify</div>;
 const NotFound = () => <div>404 Not Found</div>;
@@ -49,13 +50,14 @@ const AppRouter = () => (
       <Route element={<GuestLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/room/:id" element={<RoomDetail />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
 
       {/* Search Route (Standalone Layout) */}
       <Route path="/search" element={<Search />} />
       
       {/* Booking Route (Standalone Layout) */}
-      <Route path="/booking" element={<BookingPage />} />
+      <Route path="/booking" element={<BookingSummary />} />
 
       {/* Protected Guest Routes (Cần đăng nhập - ví dụ: trang cá nhân, lịch sử đặt phòng) */}
       <Route
@@ -65,8 +67,7 @@ const AppRouter = () => (
           </ProtectedRoute>
         }
       >
-
-        {/* Thêm các route cần bảo vệ của guest ở đây sau này */}
+        {/* XÓA QUYỀN TRUY CẬP TRONG NÀY TẠM THỜI */}
         {/* <Route path="/profile" element={<Profile />} /> */}
       </Route>
 
@@ -79,7 +80,6 @@ const AppRouter = () => (
         }
       >
         <Route path="/host/dashboard" element={<HostDashboard />} />
-        {/* ...other host routes... */}
       </Route>
       {/* Staff Routes */}
       <Route
@@ -90,7 +90,6 @@ const AppRouter = () => (
         }
       >
         <Route path="/staff/check-in-out" element={<StaffCheckInOut />} />
-        {/* ...other staff routes... */}
       </Route>
       {/* Moderator Routes */}
       <Route
@@ -101,7 +100,6 @@ const AppRouter = () => (
         }
       >
         <Route path="/moderator/user-management" element={<ModeratorUserManagement />} />
-        {/* ...other moderator routes... */}
       </Route>
       {/* Admin Routes */}
       <Route
@@ -112,7 +110,6 @@ const AppRouter = () => (
         }
       >
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        {/* ...other admin routes... */}
       </Route>
       {/* Common */}
       <Route path="/forbidden" element={<Forbidden />} />
