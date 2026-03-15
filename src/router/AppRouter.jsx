@@ -17,11 +17,16 @@ import { default as AdminLayout } from "../layouts/AdminLayout";
 import ProtectedRoute from "./ProtectedRoute";
 
 // Guest Pages
-import Home from "../pages/guest/Home";
+import Home from "../pages/guest/HomePage";
 import Search from "../pages/guest/Search";
 import RoomDetail from "../pages/guest/RoomDetail";
 import BookingSummary from "../pages/guest/BookingSummary";
 import Profile from "../pages/guest/Profile";
+import MyBookings from "../pages/guest/MyBookings";
+import History from "../pages/guest/History";
+import ChatPage from "../pages/guest/ChatPage";
+import Notifications from "../pages/guest/Notifications";
+import Favorites from "../pages/guest/Favorites";
 
 // Các trang placeholder khác
 const ForgotPassword = () => <div>Forgot Password</div>;
@@ -46,20 +51,27 @@ const AppRouter = () => (
         <Route path="/email-verify" element={<EmailVerifyPage />} />
       </Route>
 
-      {/* Public Guest Routes (Không cần đăng nhập) */}
+      {/* Public Guest Routes (Gom tất cả trang của Guest vào chung Layout để có Header) */}
       <Route element={<GuestLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/room/:id" element={<RoomDetail />} />
         <Route path="/profile" element={<Profile />} />
+        
+        {/* CÁC ROUTE MỚI THÊM */}
+        <Route path="/my-bookings" element={<MyBookings />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/favorites" element={<Favorites />} />
       </Route>
 
-      {/* Search Route (Standalone Layout) */}
+      {/* Search Route (Standalone Layout - Đã có sẵn Header riêng) */}
       <Route path="/search" element={<Search />} />
       
-      {/* Booking Route (Standalone Layout) */}
-      <Route path="/booking" element={<BookingSummary />} />
+      {/* Booking Summary Route (Standalone Layout - Đã có sẵn Header riêng) */}
+      <Route path="/booking-summary" element={<BookingSummary />} />
 
-      {/* Protected Guest Routes (Cần đăng nhập - ví dụ: trang cá nhân, lịch sử đặt phòng) */}
+      {/* Protected Guest Routes (Cần đăng nhập) */}
       <Route
         element={
           <ProtectedRoute roles={["guest"]}>
@@ -81,6 +93,7 @@ const AppRouter = () => (
       >
         <Route path="/host/dashboard" element={<HostDashboard />} />
       </Route>
+
       {/* Staff Routes */}
       <Route
         element={
@@ -91,6 +104,7 @@ const AppRouter = () => (
       >
         <Route path="/staff/check-in-out" element={<StaffCheckInOut />} />
       </Route>
+
       {/* Moderator Routes */}
       <Route
         element={
@@ -101,6 +115,7 @@ const AppRouter = () => (
       >
         <Route path="/moderator/user-management" element={<ModeratorUserManagement />} />
       </Route>
+
       {/* Admin Routes */}
       <Route
         element={
@@ -111,6 +126,7 @@ const AppRouter = () => (
       >
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
+
       {/* Common */}
       <Route path="/forbidden" element={<Forbidden />} />
       <Route path="*" element={<NotFound />} />

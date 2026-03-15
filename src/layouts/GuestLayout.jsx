@@ -63,26 +63,23 @@ const GuestLayout = () => {
                   </span>
                 </Link>
 
-                {/* ========================================= */}
                 {/* DROPDOWN MENU */}
-                {/* ========================================= */}
                 {isMenuOpen && (
                   <div className="absolute top-[calc(100%+12px)] right-0 w-[320px] bg-white rounded-2xl shadow-[0_8px_28px_rgba(0,0,0,0.15)] border border-slate-200 py-2 z-50 flex flex-col text-sm text-slate-700 font-medium overflow-hidden">
                     
-                    {/* 4 Mục đầu có kèm Icon sinh động */}
-                    <Link to="#" className="px-5 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                    <Link to="/my-bookings" className="px-5 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 font-medium text-slate-700">
                       <span className="material-symbols-outlined text-[20px] text-slate-400">luggage</span>
                       Đặt phòng của tôi
                     </Link>
-                    <Link to="#" className="px-5 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                    <Link to="/chat" className="px-5 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 font-medium text-slate-700">
                       <span className="material-symbols-outlined text-[20px] text-slate-400">chat</span>
                       Tin nhắn
                     </Link>
-                    <Link to="#" className="px-5 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                    <Link to="/notifications" className="px-5 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 font-medium text-slate-700">
                       <span className="material-symbols-outlined text-[20px] text-slate-400">notifications</span>
                       Thông báo
                     </Link>
-                    <Link to="#" className="px-5 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3">
+                    <Link to="/favorites" className="px-5 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 font-medium text-slate-700">
                       <span className="material-symbols-outlined text-[20px] text-slate-400">favorite</span>
                       Yêu thích
                     </Link>

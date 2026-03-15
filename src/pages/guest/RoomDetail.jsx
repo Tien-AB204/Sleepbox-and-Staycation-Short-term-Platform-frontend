@@ -478,7 +478,7 @@ const RoomDetail = () => {
                   </select>
                 </div>
               </div>
-              <button onClick={() => navigate('/booking')} className="w-full rounded-xl bg-[#351a5b] py-4 text-center font-bold text-white shadow-lg shadow-[#351a5b]/20 hover:brightness-110 active:scale-[0.98] transition-all">
+              <button onClick={() => navigate('/booking-summary')} className="w-full rounded-xl bg-[#351a5b] py-4 text-center font-bold text-white shadow-lg shadow-[#351a5b]/20 hover:brightness-110 active:scale-[0.98] transition-all">
                 Đặt ngay
               </button>
               <p className="mt-4 text-center text-xs text-slate-500">
