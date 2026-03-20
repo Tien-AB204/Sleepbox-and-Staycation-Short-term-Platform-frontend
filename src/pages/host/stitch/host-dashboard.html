@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BoxHub Host Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#351a5b",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#18131f",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .chart-gradient {
+            background: linear-gradient(180deg, rgba(53, 26, 91, 0.1) 0%, rgba(53, 26, 91, 0) 100%);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
+<div class="flex min-h-screen overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-72 bg-white dark:bg-slate-900 border-r border-primary/10 flex flex-col fixed h-full z-50">
+<div class="p-6 flex flex-col h-full">
+<!-- Host Profile Summary -->
+<div class="flex items-center gap-3 mb-8">
+<div class="size-12 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden border-2 border-primary/20">
+<img class="w-full h-full object-cover" data-alt="Professional host headshot smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8esGwMZYrzun2IqSyZtChjqLDzH5pg31iIYxkoQiuJEbsvb7Sir0u_x2I9zLMrjkvHXzK4h-G9mF5X7Jsg9AqyvT-pE273kaUyq4ZdqGf7R2Dg4r5vr1d65xeSgSd1uRP_mBaNHX-H1Bys9BJG9GYhWb_EJgb6D5yxqUQuv8__w1VAdON8-p1TmqS1hY__PZAyLqdaydDEh0T7_BbATwhoSE4Werg0V3eHzM_6Rh3cL_UJji1fHYQ4qgYq8_f_yfKaRzqhIAFZeBU"/>
+</div>
+<div class="flex flex-col">
+<h1 class="text-slate-900 dark:text-white text-base font-bold leading-tight">Alex Sterling</h1>
+<p class="text-primary text-xs font-semibold uppercase tracking-wider">Superhost • 4.9★</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary text-white" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-medium text-sm">Bookings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">domain</span>
+<span class="font-medium text-sm">Properties</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-medium text-sm">Earnings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">reviews</span>
+<span class="font-medium text-sm">Reviews</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-medium text-sm">Settings</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-primary/10">
+<button class="w-full bg-primary text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-all">
+<span class="material-symbols-outlined">add_circle</span>
+<span>Add New Listing</span>
+</button>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 ml-72">
+<!-- Header -->
+<header class="h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-primary/10 px-8 flex items-center justify-between sticky top-0 z-40">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full bg-primary/5 border-none rounded-xl pl-11 pr-4 py-2.5 focus:ring-2 focus:ring-primary/20 text-sm" placeholder="Search bookings, guests, or payments..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="size-10 rounded-xl bg-primary/5 flex items-center justify-center relative hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white"></span>
+</button>
+<button class="size-10 rounded-xl bg-primary/5 flex items-center justify-center hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-slate-600 dark:text-slate-300">help_outline</span>
+</button>
+<div class="h-8 w-px bg-primary/10 mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-slate-900 dark:text-white">Admin View</p>
+<p class="text-[10px] text-slate-500">Premium Host Account</p>
+</div>
+<div class="size-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+<span class="text-primary font-bold">AS</span>
+</div>
+</div>
+</div>
+</header>
+<div class="p-8 space-y-8 max-w-[1400px] mx-auto">
+<!-- Page Title & Quick Actions -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<h2 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Host Dashboard</h2>
+<p class="text-slate-500 mt-1">Good morning, Alex. Here is what's happening with your properties today.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-primary/20 font-semibold text-sm hover:bg-primary/5 transition-all">
+<span class="material-symbols-outlined text-lg">edit_calendar</span>
+                            Manage Pricing
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm hover:shadow-lg hover:shadow-primary/20 transition-all">
+<span class="material-symbols-outlined text-lg">add_business</span>
+                            Add New Facility
+                        </button>
+</div>
+</div>
+<!-- KPI Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-primary/10 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="size-12 rounded-xl bg-green-500/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-green-600">account_balance_wallet</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold">+12.5% vs LW</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Total Revenue (Monthly)</p>
+<p class="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">$12,450.00</p>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-primary/10 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="size-12 rounded-xl bg-blue-500/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-blue-600">bed</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">+4.2% vs LW</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Occupancy Rate</p>
+<p class="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">88.4%</p>
+</div>
+<div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-primary/10 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="size-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-amber-600">star</span>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">452 Reviews</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Average Rating</p>
+<p class="text-3xl font-extrabold text-slate-900 dark:text-white mt-1">4.92</p>
+</div>
+</div>
+<!-- Main Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Revenue Trends Chart (Placeholder) -->
+<div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-primary/10 shadow-sm flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Revenue Trends</h3>
+<div class="flex items-center gap-2 bg-primary/5 p-1 rounded-lg">
+<button class="px-3 py-1 text-xs font-bold rounded-md bg-white text-primary shadow-sm">Weekly</button>
+<button class="px-3 py-1 text-xs font-bold text-slate-500">Monthly</button>
+</div>
+</div>
+<div class="flex-1 min-h-[300px] flex flex-col justify-end">
+<div class="flex items-end justify-between gap-2 h-48 w-full px-2">
+<div class="w-full bg-primary/10 rounded-t-lg h-[40%] hover:bg-primary/30 transition-all cursor-pointer relative group">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">$1,2k</div>
+</div>
+<div class="w-full bg-primary/10 rounded-t-lg h-[60%] hover:bg-primary/30 transition-all cursor-pointer relative group">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">$1,8k</div>
+</div>
+<div class="w-full bg-primary/10 rounded-t-lg h-[55%] hover:bg-primary/30 transition-all cursor-pointer relative group"></div>
+<div class="w-full bg-primary/10 rounded-t-lg h-[80%] hover:bg-primary/30 transition-all cursor-pointer relative group"></div>
+<div class="w-full bg-primary/10 rounded-t-lg h-[75%] hover:bg-primary/30 transition-all cursor-pointer relative group"></div>
+<div class="w-full bg-primary rounded-t-lg h-[95%] hover:bg-primary/90 transition-all cursor-pointer relative group">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity">$2,4k</div>
+</div>
+<div class="w-full bg-primary/10 rounded-t-lg h-[65%] hover:bg-primary/30 transition-all cursor-pointer relative group"></div>
+</div>
+<div class="flex justify-between mt-4 px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+<span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+</div>
+</div>
+</div>
+<!-- Today's Activity -->
+<div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-primary/10 shadow-sm">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6">Today's Schedule</h3>
+<div class="space-y-6">
+<div>
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+<span class="size-2 bg-primary rounded-full"></span> Check-ins (3)
+                                </p>
+<div class="space-y-3">
+<div class="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/5">
+<img class="size-10 rounded-full object-cover" data-alt="Guest profile picture 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvIesA5-ZjffcpILzHLX4fb94_Jqr64phlhcAD0bIq1RqftkwQxOdqE6Zl1co2oup3fMm3BkgoLKdn7Rs9EiOGMlGBV8Zu50yTF6M77zTN2eh87CB-YYyiX7nCGVwTU5ZWesGqpcJ8e5vntHPjOuVigv9JmDYybkDMKU456DXrnosoPg0pyyqgzW82wxmokA9noawpGs-5TUTjupNjRqMtdEFR49vO5h45dFyICCAL9CptVO2fBggKps_XK6VnMSKFTonWfkmKvS4s"/>
+<div class="flex-1">
+<p class="text-sm font-bold text-slate-900 dark:text-white">James Wilson</p>
+<p class="text-xs text-slate-500">Loft Suite #402 • 2 PM</p>
+</div>
+<span class="material-symbols-outlined text-primary text-xl">chat</span>
+</div>
+<div class="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/5">
+<img class="size-10 rounded-full object-cover" data-alt="Guest profile picture 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZsO2ukLbcDK4U-K_Mo-2Fi8m3aO1F0eQtGBo_Il5oSF1YI1FOPVCR8iQJ68M-YMs23bQ00NIrbfVNLuYKLGDlLbWN12e0Y5tjeD3aDWG5Lc_DBZOU1f7-o-MMjQK5vnD-k_rqMZUCh1b9LPqPxgUl8cYavqPcJguQwvMhcaYGr_bk7bUyJsN2ps3Suqig9SzT6FY0-7KcVOkz6kQEG5HrmYHt_cggD2ewWb8Alur9zBQifuedni82Iuk5aINHgvDkhtysc3eANcW4"/>
+<div class="flex-1">
+<p class="text-sm font-bold text-slate-900 dark:text-white">Sarah Chen</p>
+<p class="text-xs text-slate-500">Garden Villa • 4 PM</p>
+</div>
+<span class="material-symbols-outlined text-primary text-xl">chat</span>
+</div>
+</div>
+</div>
+<div class="pt-4 border-t border-primary/10">
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+<span class="size-2 bg-slate-400 rounded-full"></span> Check-outs (1)
+                                </p>
+<div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+<img class="size-10 rounded-full object-cover" data-alt="Guest profile picture 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxLcSBJvI-Z2AlZw62aE-ge55hWhLvSnbBNyDfhZHmwOnzV6F4WFjNFJqtf4Z9l0B2GvMQzfwmNUEprOVoV1G96pz-2_NiR6oKe-gzihEKNRQrauKgaDa2xJ8kHtHBMgnFJS96_IFYPL9vTPpQALBI4_YjTIhqIiaJphw8YdKyNAExRREyAhwkHf0LfppNUZCIchEa61nT-ucL2EJyHTOJBbMudjRe9zqNGmANyNT5N2nkLGSEdVKkES4984phIa6q35whwZtz8dtt"/>
+<div class="flex-1">
+<p class="text-sm font-bold text-slate-900 dark:text-white">Michael Ross</p>
+<p class="text-xs text-slate-500">Urban Studio • 11 AM</p>
+</div>
+<span class="px-2 py-1 rounded-md bg-white text-primary text-[10px] font-bold shadow-sm">PENDING</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Properties Status Table -->
+<div class="bg-white dark:bg-slate-900 rounded-2xl border border-primary/10 shadow-sm overflow-hidden">
+<div class="p-6 border-b border-primary/10 flex justify-between items-center">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Top Performing Properties</h3>
+<button class="text-primary text-sm font-bold hover:underline">View All Properties</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-primary/5">
+<tr>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Property</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Occupancy</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Revenue</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-primary/5">
+<tr>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-cover bg-center" data-alt="Modern loft apartment interior" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDsCHCajy20pvipX0g2CNP9l8qLkghiNcwu6xs9yoj6CkixAQJsEqXbxYUErmuh4RmNcq4ztYVVX83auytO20_5tvKdApUA-2QggyxEJ6STgiMQRakxPLoNDEvjTQICCJrmwJ5CjeQhu0jXMZxsjmc74voO-JYtckhAj-j5k5xP5Jp0AfzAWKc3e0r851gbAzny7gcZkA4l0Ma1sVpJr0q5S70S4FXSBpybn3cbVGsbE_kTjSCI_NVHGl8HpCRDf-zMvi3hyf_Oy1fo')"></div>
+<div>
+<p class="text-sm font-bold text-slate-900 dark:text-white">The Downtown Loft</p>
+<p class="text-xs text-slate-500">New York, NY</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+<span class="size-1.5 rounded-full bg-green-600"></span> Active
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<div class="w-24 h-2 bg-primary/10 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[92%]"></div>
+</div>
+<p class="text-[10px] font-bold text-slate-500 mt-1">92%</p>
+</td>
+<td class="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white">$4,250</td>
+<td class="px-6 py-4">
+<button class="size-8 rounded-lg hover:bg-primary/10 flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-cover bg-center" data-alt="Scandinavian style cottage in woods" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAxOWf7VVfZclSnI7ZdUXIzHbZKIAXgtUWz1CyZtUtQvAwgvHb6Vhw5I9wkfVAGfQGMg90QDw5TLnGvajhfmhF2RIK5KE4pSDBfJ73h7oO7ogXD-6RSJR4AZewXon_XMXyzo_Ae6jyzp8GTcAXvFjwjRrocVThayeCf3mAV5RT6Xm8w-AwukIy6auwcEnZ6i_soyEFRf4VP5dRUyzmY5xkbYvf8TGF-SQ6lwsYZSYW5qdFJ0Nv_F8hHx7uzczZBZ0OjK3qv1xJk9W60')"></div>
+<div>
+<p class="text-sm font-bold text-slate-900 dark:text-white">Aspen Hideaway</p>
+<p class="text-xs text-slate-500">Aspen, CO</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+<span class="size-1.5 rounded-full bg-green-600"></span> Active
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<div class="w-24 h-2 bg-primary/10 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[78%]"></div>
+</div>
+<p class="text-[10px] font-bold text-slate-500 mt-1">78%</p>
+</td>
+<td class="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white">$3,120</td>
+<td class="px-6 py-4">
+<button class="size-8 rounded-lg hover:bg-primary/10 flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
