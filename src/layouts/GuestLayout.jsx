@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Outlet, Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../contexts/AuthContext";
 import boxHubLogo from "../assets/images/logo.png";
 
@@ -7,8 +7,16 @@ import boxHubLogo from "../assets/images/logo.png";
 import AuthModal from "../pages/auth/AuthModal";
 
 const GuestLayout = () => {
-  const { user, logout } = useAuthContext();
+  const { user, logout, switchRole } = useAuthContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    // Khi chuyển route (ví dụ redirect sang /forbidden),
+    // đóng dropdown để không “dính UI” giữa các trang.
+    setIsMenuOpen(false);
+  }, [location.pathname]);
   
   // STATE MỚI: Quản lý Modal & Chế độ Login/Register
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -87,7 +95,16 @@ const GuestLayout = () => {
                     <hr className="my-1 border-slate-200" />
                     
                     {/* KHỐI TRỞ THÀNH HOST ĐƯỢC THÊM VÀO */}
-                    <Link to="/host/dashboard" className="px-5 py-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        // Chuyển role sang host (mock) để được vào trang host ngay
+                        switchRole("host");
+                        navigate("/host/dashboard");
+                      }}
+                      className="w-full text-left px-5 py-4 hover:bg-slate-50 transition-colors flex items-center justify-between group"
+                    >
                       <div className="flex flex-col pr-4">
                         <span className="font-bold text-slate-900 text-base mb-1">Trở thành host</span>
                         <span className="text-xs text-slate-500 font-normal leading-relaxed">
@@ -99,7 +116,7 @@ const GuestLayout = () => {
                         alt="Host" 
                         className="w-12 h-12 object-contain group-hover:scale-110 transition-transform shrink-0 drop-shadow-sm"
                       />
-                    </Link>
+                    </button>
 
                     <hr className="my-1 border-slate-200" />
 

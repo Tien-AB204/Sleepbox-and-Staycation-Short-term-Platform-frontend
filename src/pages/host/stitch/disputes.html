@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BoxHub Host Portal - Dispute Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#351a5b",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#18131f",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ece9f1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-64 flex-shrink-0 border-r border-primary/10 bg-white dark:bg-background-dark/50 flex flex-col">
+<div class="p-6 flex items-center gap-3">
+<div class="size-10 rounded-full bg-primary flex items-center justify-center text-white">
+<span class="material-symbols-outlined">package_2</span>
+</div>
+<div>
+<h1 class="text-primary font-bold text-lg leading-none">BoxHub</h1>
+<p class="text-xs text-slate-500 font-medium">Host Portal</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">dashboard</span>
+<span class="text-sm font-semibold">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">apartment</span>
+<span class="text-sm font-semibold">Facilities</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">confirmation_number</span>
+<span class="text-sm font-semibold">Bookings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">calendar_today</span>
+<span class="text-sm font-semibold">Calendar</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">account_balance_wallet</span>
+<span class="text-sm font-semibold">Revenue</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">sell</span>
+<span class="text-sm font-semibold">Pricing</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">group</span>
+<span class="text-sm font-semibold">Staff</span>
+</a>
+<div class="bg-primary/10 flex items-center gap-3 px-3 py-2 rounded-xl text-primary mt-4">
+<span class="material-symbols-outlined text-[22px] fill-1">gavel</span>
+<span class="text-sm font-semibold">Disputes</span>
+</div>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">settings</span>
+<span class="text-sm font-semibold">Settings</span>
+</a>
+</nav>
+<div class="p-4 mt-auto border-t border-primary/5">
+<div class="flex items-center gap-3 p-2">
+<div class="size-10 rounded-full bg-slate-200 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile picture of a property host" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtwXlhsQLOlwAoBW2e9odAo8Pwfjr0CjHzFTEjFJquwtECb3_FxoD8I2I3qTjFNJCAd3uhXPej0CnDaP_OsL0LNwKciwneU7dHlxeJDTc_DY0v1U1aR3EFsbX7U73V3gwA16w67zjwkPTpCmtUnG9bxAwnh4PWfm8vJLYvi6UuERZEgUt1x85DLq6h5qUfHuttnD8pG61STL_I3Ag_fgTpW3LgUmN9Bwp7eTCsxWiUK0p7oGuuUJ56w1itAuCsDndExvn-RQpwWPvU"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<p class="text-sm font-bold truncate">Sarah Jenkins</p>
+<p class="text-xs text-slate-500 truncate">Super Host</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- Header -->
+<header class="h-16 border-b border-primary/10 bg-white dark:bg-background-dark/50 flex items-center justify-between px-8 z-10">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-bold text-slate-900 dark:text-white">Dispute Management</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+<input class="pl-10 pr-4 py-2 bg-background-light border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/20 w-64" placeholder="Search disputes..." type="text"/>
+</div>
+<button class="bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-lg">add_circle</span>
+                        Report New Issue
+                    </button>
+<button class="p-2 text-slate-500 hover:bg-primary/5 rounded-full relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white"></span>
+</button>
+</div>
+</header>
+<div class="flex-1 flex overflow-hidden">
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-primary/5 shadow-sm">
+<p class="text-sm font-medium text-slate-500 mb-1">Total Active Disputes</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-primary">12</h3>
+<span class="text-xs font-bold text-red-500 bg-red-50 px-2 py-1 rounded-full">+2 today</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-primary/5 shadow-sm">
+<p class="text-sm font-medium text-slate-500 mb-1">Resolved This Month</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-slate-900 dark:text-white">48</h3>
+<span class="text-xs font-bold text-green-500 bg-green-50 px-2 py-1 rounded-full">↑ 12%</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-primary/5 shadow-sm">
+<p class="text-sm font-medium text-slate-500 mb-1">Avg. Resolution Time</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-slate-900 dark:text-white">2.4 <span class="text-sm font-medium text-slate-400">Days</span></h3>
+<span class="text-xs font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-full">-0.5d</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-primary/5 shadow-sm">
+<p class="text-sm font-medium text-slate-500 mb-1">Pending Refunds</p>
+<div class="flex items-end justify-between">
+<h3 class="text-3xl font-bold text-slate-900 dark:text-white">$1,240</h3>
+<span class="text-xs font-bold text-amber-500 bg-amber-50 px-2 py-1 rounded-full">3 awaiting</span>
+</div>
+</div>
+</div>
+<!-- Main Table -->
+<div class="bg-white dark:bg-slate-800 rounded-xl border border-primary/5 shadow-sm overflow-hidden">
+<div class="p-6 border-b border-primary/5 flex items-center justify-between">
+<h4 class="font-bold text-lg">Active Issue Log</h4>
+<div class="flex gap-2">
+<button class="p-2 border border-primary/10 rounded-lg hover:bg-primary/5">
+<span class="material-symbols-outlined text-xl">filter_list</span>
+</button>
+<button class="p-2 border border-primary/10 rounded-lg hover:bg-primary/5">
+<span class="material-symbols-outlined text-xl">download</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-slate-50 dark:bg-slate-700/50">
+<tr>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Dispute ID</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Guest Name</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Property/Unit</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Category</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Priority</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Date</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-primary/5">
+<!-- Row 1 -->
+<tr class="hover:bg-primary/[0.02] transition-colors group">
+<td class="px-6 py-4 font-medium text-primary">#DIS-8921</td>
+<td class="px-6 py-4 font-semibold">Alex Johnson</td>
+<td class="px-6 py-4 text-sm text-slate-600">Unit 4B - Downtown</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Cleanliness</span>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-xs font-bold text-red-600">
+<span class="size-2 bg-red-600 rounded-full"></span> High
+                                            </span>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold border border-blue-100">Open</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-500">Oct 24, 2023</td>
+<td class="px-6 py-4">
+<div class="flex gap-3 text-primary">
+<button class="hover:text-primary/70" title="View Details"><span class="material-symbols-outlined text-xl">visibility</span></button>
+<button class="hover:text-primary/70" title="Message Guest"><span class="material-symbols-outlined text-xl">chat</span></button>
+<button class="hover:text-primary/70" title="Assign Staff"><span class="material-symbols-outlined text-xl">person_add</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-primary/[0.02] transition-colors">
+<td class="px-6 py-4 font-medium text-primary">#DIS-8918</td>
+<td class="px-6 py-4 font-semibold">Maria Garcia</td>
+<td class="px-6 py-4 text-sm text-slate-600">Suite 12 - Seaside</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Payment</span>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-xs font-bold text-amber-600">
+<span class="size-2 bg-amber-600 rounded-full"></span> Medium
+                                            </span>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-xs font-bold border border-amber-100">In Progress</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-500">Oct 22, 2023</td>
+<td class="px-6 py-4">
+<div class="flex gap-3 text-primary">
+<button class="hover:text-primary/70" title="View Details"><span class="material-symbols-outlined text-xl">visibility</span></button>
+<button class="hover:text-primary/70" title="Message Guest"><span class="material-symbols-outlined text-xl">chat</span></button>
+<button class="hover:text-primary/70" title="Assign Staff"><span class="material-symbols-outlined text-xl">person_add</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-primary/[0.02] transition-colors">
+<td class="px-6 py-4 font-medium text-primary">#DIS-8915</td>
+<td class="px-6 py-4 font-semibold">James Smith</td>
+<td class="px-6 py-4 text-sm text-slate-600">Unit 2A - Uptown</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Noise</span>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+<span class="size-2 bg-slate-500 rounded-full"></span> Low
+                                            </span>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs font-bold border border-green-100">Resolved</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-500">Oct 20, 2023</td>
+<td class="px-6 py-4">
+<div class="flex gap-3 text-primary">
+<button class="hover:text-primary/70" title="View Details"><span class="material-symbols-outlined text-xl">visibility</span></button>
+<button class="hover:text-primary/70" title="Message Guest"><span class="material-symbols-outlined text-xl">chat</span></button>
+<button class="hover:text-primary/70" title="Assign Staff"><span class="material-symbols-outlined text-xl">person_add</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-primary/[0.02] transition-colors">
+<td class="px-6 py-4 font-medium text-primary">#DIS-8910</td>
+<td class="px-6 py-4 font-semibold">Linda Chen</td>
+<td class="px-6 py-4 text-sm text-slate-600">Unit 9 - Metro</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">Maintenance</span>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-xs font-bold text-red-600">
+<span class="size-2 bg-red-600 rounded-full"></span> High
+                                            </span>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-red-50 text-red-600 rounded-full text-xs font-bold border border-red-100">Escalated</span>
+</td>
+<td class="px-6 py-4 text-sm text-slate-500">Oct 19, 2023</td>
+<td class="px-6 py-4">
+<div class="flex gap-3 text-primary">
+<button class="hover:text-primary/70" title="View Details"><span class="material-symbols-outlined text-xl">visibility</span></button>
+<button class="hover:text-primary/70" title="Message Guest"><span class="material-symbols-outlined text-xl">chat</span></button>
+<button class="hover:text-primary/70" title="Assign Staff"><span class="material-symbols-outlined text-xl">person_add</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Sidebar Widget -->
+<aside class="w-80 border-l border-primary/10 bg-white dark:bg-background-dark/50 p-6 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+<div>
+<h4 class="font-bold text-slate-900 dark:text-white mb-4">Resolution Progress</h4>
+<div class="space-y-4">
+<div class="relative pt-1">
+<div class="flex mb-2 items-center justify-between">
+<div>
+<span class="text-xs font-semibold inline-block text-primary">Weekly Target</span>
+</div>
+<div class="text-right">
+<span class="text-xs font-semibold inline-block text-primary">85%</span>
+</div>
+</div>
+<div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-primary/10">
+<div class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary" style="width:85%"></div>
+</div>
+</div>
+</div>
+</div>
+<div>
+<h4 class="font-bold text-slate-900 dark:text-white mb-4">Recent Activity</h4>
+<div class="space-y-6">
+<div class="flex gap-4 relative before:absolute before:left-[18px] before:top-10 before:bottom-[-24px] before:w-px before:bg-primary/10 last:before:hidden">
+<div class="size-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 z-10">
+<span class="material-symbols-outlined text-green-600 text-lg">check_circle</span>
+</div>
+<div>
+<p class="text-sm font-bold">Issue #DIS-8915 Resolved</p>
+<p class="text-xs text-slate-500 mt-0.5">James Smith's noise complaint has been closed by Staff Mark.</p>
+<p class="text-[10px] text-slate-400 mt-1 uppercase font-bold">2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-4 relative before:absolute before:left-[18px] before:top-10 before:bottom-[-24px] before:w-px before:bg-primary/10 last:before:hidden">
+<div class="size-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 z-10">
+<span class="material-symbols-outlined text-primary text-lg">mail</span>
+</div>
+<div>
+<p class="text-sm font-bold">New Message</p>
+<p class="text-xs text-slate-500 mt-0.5">Alex Johnson sent a message regarding #DIS-8921.</p>
+<p class="text-[10px] text-slate-400 mt-1 uppercase font-bold">5 hours ago</p>
+</div>
+</div>
+<div class="flex gap-4 relative before:absolute before:left-[18px] before:top-10 before:bottom-[-24px] before:w-px before:bg-primary/10 last:before:hidden">
+<div class="size-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 z-10">
+<span class="material-symbols-outlined text-red-600 text-lg">priority_high</span>
+</div>
+<div>
+<p class="text-sm font-bold">Issue Escalated</p>
+<p class="text-xs text-slate-500 mt-0.5">#DIS-8910 (Unit 9) marked as high priority due to delay.</p>
+<p class="text-[10px] text-slate-400 mt-1 uppercase font-bold">8 hours ago</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="size-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 z-10">
+<span class="material-symbols-outlined text-blue-600 text-lg">person_add</span>
+</div>
+<div>
+<p class="text-sm font-bold">Staff Assigned</p>
+<p class="text-xs text-slate-500 mt-0.5">Elena assigned to maintenance request #DIS-8922.</p>
+<p class="text-[10px] text-slate-400 mt-1 uppercase font-bold">Yesterday</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-2 text-primary font-bold text-sm border border-primary/20 rounded-xl hover:bg-primary/5 transition-colors">
+                            View All History
+                        </button>
+</div>
+<div class="bg-primary/5 rounded-2xl p-4 mt-auto">
+<div class="flex items-center gap-3 mb-2">
+<span class="material-symbols-outlined text-primary">lightbulb</span>
+<h5 class="font-bold text-sm">Host Tip</h5>
+</div>
+<p class="text-xs text-slate-600 leading-relaxed">
+                            Resolving cleanliness disputes within 4 hours increases guest satisfaction by 40%.
+                        </p>
+</div>
+</aside>
+</div>
+</main>
+</div>
+</body></html>

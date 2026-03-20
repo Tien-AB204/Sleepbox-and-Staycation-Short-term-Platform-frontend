@@ -28,6 +28,21 @@ import ChatPage from "../pages/guest/ChatPage";
 import Notifications from "../pages/guest/Notifications";
 import Favorites from "../pages/guest/Favorites";
 
+// Host pages (nhúng UI từ stitch)
+import HostDashboard from "../pages/host/Dashboard";
+import HostFacilities from "../pages/host/Facilities";
+import HostCalendar from "../pages/host/Calendar";
+import HostPricing from "../pages/host/Pricing";
+import HostStaffManagement from "../pages/host/StaffManagement";
+import HostSleepboxes from "../pages/host/Sleepboxes";
+import HostBookingManagement from "../pages/host/BookingManagement";
+import HostStatistics from "../pages/host/Statistics";
+import HostDisputes from "../pages/host/Disputes";
+import HostRegister from "../pages/host/HostRegister";
+import HostReviews from "../pages/host/Reviews";
+import HostSettings from "../pages/host/Settings";
+import HostMessages from "../pages/host/Messages";
+
 // Các trang placeholder khác
 const ForgotPassword = () => <div>Forgot Password</div>;
 const EmailVerifyPage = () => <div>Email Verify</div>;
@@ -35,7 +50,6 @@ const NotFound = () => <div>404 Not Found</div>;
 const Forbidden = () => <div>403 Forbidden</div>;
 
 // Host/Staff/Moderator/Admin placeholder
-const HostDashboard = () => <div>Host Dashboard</div>;
 const StaffCheckInOut = () => <div>Staff CheckInOut</div>;
 const ModeratorUserManagement = () => <div>Moderator User Management</div>;
 const AdminDashboard = () => <div>Admin Dashboard</div>;
@@ -92,6 +106,18 @@ const AppRouter = () => (
         }
       >
         <Route path="/host/dashboard" element={<HostDashboard />} />
+        <Route path="/host/facilities" element={<HostFacilities />} />
+        <Route path="/host/calendar" element={<HostCalendar />} />
+        <Route path="/host/pricing" element={<HostPricing />} />
+        <Route path="/host/staff-management" element={<HostStaffManagement />} />
+        <Route path="/host/sleepboxes" element={<HostSleepboxes />} />
+        <Route path="/host/booking-management" element={<HostBookingManagement />} />
+        <Route path="/host/statistics" element={<HostStatistics />} />
+        <Route path="/host/disputes" element={<HostDisputes />} />
+        <Route path="/host/register" element={<HostRegister />} />
+        <Route path="/host/reviews" element={<HostReviews />} />
+        <Route path="/host/settings" element={<HostSettings />} />
+        <Route path="/host/messages" element={<HostMessages />} />
       </Route>
 
       {/* Staff Routes */}

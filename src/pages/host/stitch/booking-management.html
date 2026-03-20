@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BoxHub | Booking Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#351a5b",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#18131f",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-64 flex-shrink-0 border-r border-primary/10 bg-white dark:bg-background-dark flex flex-col">
+<div class="p-6 flex items-center gap-3">
+<div class="size-10 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">inventory_2</span>
+</div>
+<div>
+<h1 class="text-primary font-bold text-lg leading-tight">BoxHub</h1>
+<p class="text-xs text-slate-500 font-medium uppercase tracking-wider">Host Portal</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-semibold">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">corporate_fare</span>
+<span class="text-sm font-semibold">Facilities</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary text-white shadow-md shadow-primary/20" href="#">
+<span class="material-symbols-outlined">book_online</span>
+<span class="text-sm font-semibold">Bookings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-sm font-semibold">Calendar</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-sm font-semibold">Revenue</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">sell</span>
+<span class="text-sm font-semibold">Pricing</span>
+</a>
+</nav>
+<div class="p-4 border-t border-primary/10">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-primary/5 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-semibold">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-hidden">
+<!-- Top Bar -->
+<header class="h-16 bg-white dark:bg-background-dark border-b border-primary/10 px-8 flex items-center justify-between">
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+<input class="w-full pl-11 pr-4 py-2 bg-background-light dark:bg-slate-800 border-none rounded-lg focus:ring-2 focus:ring-primary/50 text-sm" placeholder="Search booking ID, guest name, or unit..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-background-light rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white"></span>
+</button>
+<div class="h-8 w-px bg-primary/10 mx-2"></div>
+<div class="flex items-center gap-3 cursor-pointer group">
+<div class="text-right">
+<p class="text-sm font-bold leading-none">Terminal 3 Hub</p>
+<p class="text-xs text-slate-500 font-medium">Main Manager</p>
+</div>
+<div class="size-10 rounded-full border-2 border-primary/20 bg-cover bg-center" data-alt="Manager profile avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA-EkFRTbKyjgL8p5bljbAnx2QyuTITDTDgJqJyqvx4JbDY8cF5XuUL-pLuH9EgnVItadOTSUZCq5hit-zxMDv7gbgqZqWPHSELyt53pUSb5cFG8qaWK5vo0yZeDJ_MZZ5-pI8xE6b9_Te3hJhLBXBNWyAUn2Q771yIkOEPmrX7XS6n6BPaEYFLS21CA6LiFWetgMl9lAtClHYB6GFk_-tdJJIp1_D4mGflAOBCbe1afasA5EPZ3_wcwgQNNLYC16Q3nF1nLN4hQzbr')"></div>
+</div>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="flex-1 overflow-y-auto p-8 space-y-8">
+<!-- Quick Stats -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-primary/5 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary/10 rounded-lg">
+<span class="material-symbols-outlined text-primary">analytics</span>
+</div>
+<span class="text-emerald-500 text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +12%
+                            </span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Total Bookings Today</p>
+<h3 class="text-3xl font-bold mt-1">24</h3>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-primary/5 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-orange-100 rounded-lg">
+<span class="material-symbols-outlined text-orange-600">door_front</span>
+</div>
+<span class="text-slate-400 text-xs font-medium italic">Active queue</span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Check-ins Pending</p>
+<h3 class="text-3xl font-bold mt-1">8</h3>
+</div>
+<div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-primary/5 shadow-sm">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-emerald-100 rounded-lg">
+<span class="material-symbols-outlined text-emerald-600">account_balance_wallet</span>
+</div>
+<span class="text-emerald-500 text-xs font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +18%
+                            </span>
+</div>
+<p class="text-slate-500 text-sm font-medium">Expected Revenue (Week)</p>
+<h3 class="text-3xl font-bold mt-1">$12,450</h3>
+</div>
+</div>
+<!-- Booking Table Container -->
+<div class="bg-white dark:bg-slate-800 rounded-xl border border-primary/5 shadow-sm flex flex-col">
+<!-- Status Tabs & Header -->
+<div class="p-6 border-b border-primary/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex gap-1 bg-background-light dark:bg-slate-900 p-1 rounded-lg w-fit">
+<button class="px-4 py-1.5 text-sm font-bold rounded-md bg-white dark:bg-slate-800 shadow-sm text-primary">All</button>
+<button class="px-4 py-1.5 text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Upcoming</button>
+<button class="px-4 py-1.5 text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Currently In</button>
+<button class="px-4 py-1.5 text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Completed</button>
+<button class="px-4 py-1.5 text-sm font-semibold text-slate-500 hover:text-primary transition-colors">Cancelled</button>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 border border-primary/20 rounded-lg text-sm font-bold text-primary hover:bg-primary/5 transition-colors">
+<span class="material-symbols-outlined text-lg">filter_list</span> Filters
+                            </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-lg">add</span> New Booking
+                            </button>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-background-light/50 dark:bg-slate-900/50">
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Guest</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Property &amp; Unit</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Check-in / Out</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Type</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Payment Status</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Status</th>
+<th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-primary/5">
+<!-- Row 1 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-cover bg-center" data-alt="Guest avatar male" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC1cNG8OyR42VNfS-IjwbJyIPKzzI1Mf6O--qtyLzTB9TCnXNcXLOHDa99mEiMCl_uSvIUgWAGfgmQpLZlaWA7Tk_mm-GDsh85j5_VJvHEcMBDNNCCCMipJksZgkRq36BFzRENsfXaj5FmKrdFdOOlmjkjnFQmCteHariqNyBTzTTJYuRkwFtutxS8McH7B48nz3dRIdCIcsjleXM4Pjy7ba4_iaWi6GOWZxF3NDkC-kbr0Vowa8MN_VlgEv2xbpB5EbDEymjIQ5Q1I')"></div>
+<div>
+<p class="text-sm font-bold">Alex Johnson</p>
+<p class="text-xs text-slate-500">+1 (555) 123-4567</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-semibold">ZenPod - T3</p>
+<p class="text-xs text-slate-500">Box A-01</p>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-medium">Oct 12, 10:00</p>
+<p class="text-xs text-slate-400">Oct 12, 14:00</p>
+</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider">Hourly</span>
+</td>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-bold">$45.00</p>
+<p class="text-[10px] font-bold text-emerald-600 uppercase">Paid</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-primary text-sm font-bold">
+<span class="size-2 rounded-full bg-primary"></span> Confirmed
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-cover bg-center" data-alt="Guest avatar female" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDp9drcSFRPEN-UDaWTbJ4TLpwTnrQ1xGkBkkvyd3qMX9UP8It9GBx2RQ8fltxGpEbVDDHvTuzeTnYKOSNaz7ha-8xnTk0Yce8rOUIZoOxs_WUhj1PVDQArP5mlHsrqK1zf9mv35dKA6GCFXQf6P7IoEHAtp6kvFu0tq3HaAVdxQkfMkwktELqmg0MJxsaPr4IX80qz_2TmopYsf6dGNzVBcdvz2DapT5GEosFWQNoO0iG_AVXqkV9r62luOvg4Z-XpTMna3Gh4uCpQ')"></div>
+<div>
+<p class="text-sm font-bold">Sarah Williams</p>
+<p class="text-xs text-slate-500">+1 (555) 987-6543</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-semibold">ZenPod - T3</p>
+<p class="text-xs text-slate-500">Box B-05</p>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-medium">Oct 12, 15:00</p>
+<p class="text-xs text-slate-400">Oct 13, 11:00</p>
+</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 bg-purple-100 text-purple-700 rounded-full text-[10px] font-bold uppercase tracking-wider">Overnight</span>
+</td>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-bold">$120.00</p>
+<p class="text-[10px] font-bold text-emerald-600 uppercase">Paid</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-orange-600 text-sm font-bold">
+<span class="size-2 rounded-full bg-orange-600"></span> Checked-in
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-cover bg-center" data-alt="Guest avatar male 2" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBDFSHPIt3jl3YmErldsMLGsD7E9BeZqObg4k7IG3X3i15ElERRH2dYPxJm9aSGw3pQMLlho0daOjpgJ5ZUnSfa6Es6mvLfkbdz2Bi5b1iiTI_3-UqBG6ZABw1gfi-WXmO24XPjVBA1I_WKk-5NKg5Lz85ydp0p5FXIvx2BryCo8V3HXhqRihoFoSCwXCBvXp2akXcEUlOCwwmrMIn28lUpTVqdphXjLJ3wktrGfP2Jz0xyMni_jzzc9Q3BG9Mj4JBVvUq3gtGlv24c')"></div>
+<div>
+<p class="text-sm font-bold">Michael Chen</p>
+<p class="text-xs text-slate-500">+1 (555) 444-3322</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-semibold">ZenPod - T3</p>
+<p class="text-xs text-slate-500">Box A-12</p>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-medium">Oct 13, 09:00</p>
+<p class="text-xs text-slate-400">Oct 13, 12:00</p>
+</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider">Hourly</span>
+</td>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-bold">$35.00</p>
+<p class="text-[10px] font-bold text-orange-500 uppercase">Pending</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-primary text-sm font-bold">
+<span class="size-2 rounded-full bg-primary"></span> Confirmed
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-primary/5 transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-cover bg-center" data-alt="Guest avatar female 2" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBQfCS-sfL-Gq0EEN6DNiTcY4a6fu2wLcHiLkgDnvRPV4mC-UBJAstVHxsT3N3N3oq18aYbJ9pToMBwWxXcwkhWaJ1OEzgU1jIzxzfPSFDf4FTPygGiVO_G1BcOuVGeTfy4Ryuf3iUjYWi4Zbj9Tr8mYBbEDgcbgc03am0LTdy0a7qTmwZArKSldasfgwe1RepDH1NoOvFZG4eJykGrqS1xQMMqDhSlu_bELGItcGzCknYR7SA0W6ZXI-svuxWc70-l4dTbgK3GKrnD')"></div>
+<div>
+<p class="text-sm font-bold">Emily Davis</p>
+<p class="text-xs text-slate-500">+1 (555) 777-8899</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-semibold">ZenPod - T3</p>
+<p class="text-xs text-slate-500">Box C-02</p>
+</td>
+<td class="px-6 py-4">
+<p class="text-sm font-medium">Oct 11, 14:00</p>
+<p class="text-xs text-slate-400">Oct 11, 18:00</p>
+</td>
+<td class="px-6 py-4">
+<span class="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider">Hourly</span>
+</td>
+<td class="px-6 py-4">
+<div>
+<p class="text-sm font-bold">$40.00</p>
+<p class="text-[10px] font-bold text-emerald-600 uppercase">Paid</p>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="flex items-center gap-1.5 text-slate-400 text-sm font-bold">
+<span class="size-2 rounded-full bg-slate-400"></span> Completed
+                                        </span>
+</td>
+<td class="px-6 py-4">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="p-4 border-t border-primary/5 flex items-center justify-between">
+<p class="text-xs text-slate-500 font-medium tracking-tight">Showing 1-4 of 24 results</p>
+<div class="flex items-center gap-2">
+<button class="p-1.5 rounded border border-primary/10 hover:bg-background-light disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="size-8 rounded bg-primary text-white text-xs font-bold">1</button>
+<button class="size-8 rounded hover:bg-background-light text-xs font-bold">2</button>
+<button class="size-8 rounded hover:bg-background-light text-xs font-bold">3</button>
+<button class="p-1.5 rounded border border-primary/10 hover:bg-background-light">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
