@@ -80,45 +80,11 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="w-full flex justify-center py-8">
-        <div className="w-full max-w-[1200px] px-4 lg:px-0">
-          <div className="flex items-center gap-10 overflow-x-auto pb-4 scrollbar-hide no-scrollbar">
-            <div className="flex flex-col items-center gap-2 group cursor-pointer border-b-2 border-[#351a5b] pb-2 min-w-max">
-              <span className="material-symbols-outlined text-2xl text-[#351a5b]">bed</span>
-              <span className="text-sm font-bold text-slate-900">Sleepbox</span>
-            </div>
-            {/* <div className="flex flex-col items-center gap-2 group cursor-pointer border-b-2 border-transparent hover:border-slate-300 pb-2 min-w-max opacity-60 hover:opacity-100 transition-all">
-              <span className="material-symbols-outlined text-2xl">meeting_room</span>
-              <span className="text-sm font-medium">Capsule Hotel</span>
-            </div>
-            <div className="flex flex-col items-center gap-2 group cursor-pointer border-b-2 border-transparent hover:border-slate-300 pb-2 min-w-max opacity-60 hover:opacity-100 transition-all">
-              <span className="material-symbols-outlined text-2xl">hotel_class</span>
-              <span className="text-sm font-medium">Small Room</span>
-            </div>
-            <div className="flex flex-col items-center gap-2 group cursor-pointer border-b-2 border-transparent hover:border-slate-300 pb-2 min-w-max opacity-60 hover:opacity-100 transition-all">
-              <span className="material-symbols-outlined text-2xl">apartment</span>
-              <span className="text-sm font-medium">Studio</span>
-            </div> */}
-          </div>
-        </div>
-      </section>
-
       {/* Featured Listings */}
       <section className="w-full flex justify-center py-8">
         <div className="w-full max-w-[1200px] px-4 lg:px-0">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-extrabold">Chỗ nghỉ nổi bật tại TP.HCM</h2>
-            {/* <a
-              className="text-[#351a5b] font-bold hover:underline flex items-center gap-1"
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate("/search");
-              }}
-            >
-              Xem tất cả <span className="material-symbols-outlined text-sm">chevron_right</span>
-            </a> */}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Card 1 */}

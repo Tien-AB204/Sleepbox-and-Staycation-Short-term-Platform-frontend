@@ -65,27 +65,31 @@ const AppRouter = () => (
         <Route path="/email-verify" element={<EmailVerifyPage />} />
       </Route>
 
-      {/* Public Guest Routes (Gom tất cả trang của Guest vào chung Layout để có Header) */}
+      {/* ==================================================== */}
+      {/* 1. PUBLIC GUEST ROUTES (Ai cũng xem được)            */}
+      {/* ==================================================== */}
       <Route element={<GuestLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/room/:id" element={<RoomDetail />} />
-        <Route path="/profile" element={<Profile />} />
-        
-        {/* CÁC ROUTE MỚI THÊM */}
-        <Route path="/my-bookings" element={<MyBookings />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/chat" element={<ChatPage />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/favorites" element={<Favorites />} />
       </Route>
 
-      {/* Search Route (Standalone Layout - Đã có sẵn Header riêng) */}
       <Route path="/search" element={<Search />} />
-      
-      {/* Booking Summary Route (Standalone Layout - Đã có sẵn Header riêng) */}
-      <Route path="/booking-summary" element={<BookingSummary />} />
 
-      {/* Protected Guest Routes (Cần đăng nhập) */}
+      {/* ==================================================== */}
+      {/* 2. PROTECTED GUEST ROUTES (Chỉ Guest mới được vào)   */}
+      {/* ==================================================== */}
+      {/* Booking Summary cần đăng nhập để thanh toán */}
+      <Route
+        element={
+          <ProtectedRoute roles={["guest"]}>
+            <Outlet /> {/* Dùng Outlet trần vì file này tự có Layout riêng */}
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/booking-summary" element={<BookingSummary />} />
+      </Route>
+
+      {/* Các trang Profile, Lịch sử... bọc trong GuestLayout */}
       <Route
         element={
           <ProtectedRoute roles={["guest"]}>
@@ -93,11 +97,17 @@ const AppRouter = () => (
           </ProtectedRoute>
         }
       >
-        {/* XÓA QUYỀN TRUY CẬP TRONG NÀY TẠM THỜI */}
-        {/* <Route path="/profile" element={<Profile />} /> */}
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/my-bookings" element={<MyBookings />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/favorites" element={<Favorites />} />
       </Route>
 
-      {/* Host Routes */}
+      {/* ==================================================== */}
+      {/* 3. HOST ROUTES                                       */}
+      {/* ==================================================== */}
       <Route
         element={
           <ProtectedRoute roles={["host"]}>
@@ -120,7 +130,9 @@ const AppRouter = () => (
         <Route path="/host/messages" element={<HostMessages />} />
       </Route>
 
-      {/* Staff Routes */}
+      {/* ==================================================== */}
+      {/* 4. STAFF ROUTES                                      */}
+      {/* ==================================================== */}
       <Route
         element={
           <ProtectedRoute roles={["staff"]}>
@@ -131,7 +143,9 @@ const AppRouter = () => (
         <Route path="/staff/check-in-out" element={<StaffCheckInOut />} />
       </Route>
 
-      {/* Moderator Routes */}
+      {/* ==================================================== */}
+      {/* 5. MODERATOR ROUTES                                  */}
+      {/* ==================================================== */}
       <Route
         element={
           <ProtectedRoute roles={["moderator"]}>
@@ -142,7 +156,9 @@ const AppRouter = () => (
         <Route path="/moderator/user-management" element={<ModeratorUserManagement />} />
       </Route>
 
-      {/* Admin Routes */}
+      {/* ==================================================== */}
+      {/* 6. ADMIN ROUTES                                      */}
+      {/* ==================================================== */}
       <Route
         element={
           <ProtectedRoute roles={["admin"]}>

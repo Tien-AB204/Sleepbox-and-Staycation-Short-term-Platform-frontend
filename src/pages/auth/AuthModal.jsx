@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { login as loginService, register as registerService } from "../../services/authService";
 import { useAuthContext } from "../../contexts/AuthContext";
 
 const AuthModal = ({ isOpen, onClose, initialMode = "login" }) => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState(initialMode);
-  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
   const { login } = useAuthContext();
 
   useEffect(() => {
@@ -44,10 +43,34 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }) => {
     setLoading(true);
     setError("");
     try {
+      // Gọi API đăng nhập
       const data = await loginService(email, password);
-      const mockUser = { email: email, role: "guest" };
-      login(mockUser, data.accessToken || "mock-token"); 
-      onClose(); 
+      
+      // 1. Lấy đúng cấu trúc từ Swagger API của BE
+      const userRole = data.role ? data.role.toLowerCase() : "guest";
+
+      // LỚP BẢO VỆ: CHẶN TÀI KHOẢN NỘI BỘ (STAFF, MODERATOR, ADMIN)
+      if (["admin", "moderator", "staff"].includes(userRole)) {
+        setError("Tài khoản nội bộ không được đăng nhập tại đây.");
+        setLoading(false);
+        return; // Dừng chạy hàm ngay lập tức, không cấp thẻ lưu Context
+      }
+      
+      // 2. Gom các thông tin cần thiết để lưu vào Context
+      const loggedInUser = { 
+        userId: data.userId,
+        email: data.email, 
+        role: userRole 
+      };
+      
+      // 3. Đưa vào AuthContext (truyền đúng accessToken từ data)
+      login(loggedInUser, data.accessToken); 
+      onClose(); // Đóng Modal
+
+      if (userRole === "host") {
+        navigate("/host/dashboard");
+      }
+      
     } catch (err) {
       setError(err.toString());
     } finally {

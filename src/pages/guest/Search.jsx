@@ -4,9 +4,7 @@ import boxHubLogo from "../../assets/images/logo.png";
 import { useAuthContext } from "../../contexts/AuthContext";
 import AuthModal from "../auth/AuthModal";
 
-// ==========================================
 // 1. DỮ LIỆU MẪU (DATA)
-// ==========================================
 const FILTER_DATA = {
   popular: [
     "Có bữa sáng",

@@ -19,7 +19,7 @@ function isMockGuestCredentials(email, password) {
 
 export const login = async (email, password) => {
   try {
-    const res = await axios.post("/api/auth/guest/login", { email, password });
+    const res = await axios.post("/api/auth/login", { email, password });
     return res.data; // { accessToken, user: { ... } }
   } catch (err) {
     // Fallback mock cho guest
