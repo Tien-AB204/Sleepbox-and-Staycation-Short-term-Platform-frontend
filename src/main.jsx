@@ -4,13 +4,22 @@ import "./index.css";
 import App from "./App.jsx";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-// src/main.jsx
-const GOOGLE_CLIENT_ID = "203126562103-5id03c4fggf9p6us6e7f8j8uenuciviu.apps.googleusercontent.com";
+// Vite dùng import.meta.env để đọc file .env
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-createRoot(document.getElementById("root")).render(
+const root = createRoot(document.getElementById("root"));
+
+root.render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <App />
-    </GoogleOAuthProvider>
+    {/* Nếu có Client ID thì bọc App lại, nếu không thì báo lỗi nhẹ để team biết */}
+    {GOOGLE_CLIENT_ID ? (
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <App />
+      </GoogleOAuthProvider>
+    ) : (
+      <div className="flex items-center justify-center h-screen font-bold text-red-500 bg-slate-50">
+        ⚠️ Vui lòng thêm VITE_GOOGLE_CLIENT_ID vào file .env.development!
+      </div>
+    )}
   </StrictMode>
 );
