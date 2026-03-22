@@ -43,13 +43,18 @@ import StaffIssues from "../pages/staff/StaffIssues";
 import StaffVerification from "../pages/staff/StaffVerification";
 import StaffProfile from "../pages/staff/StaffProfile";
 
+// Admin (Stitch)
+import AdminDashboard from "../pages/admin/AdminDashboard";
+import AdminUsers from "../pages/admin/AdminUsers";
+import AdminTransactions from "../pages/admin/AdminTransactions";
+import AdminSettings from "../pages/admin/AdminSettings";
+
 // Các trang placeholder khác
 const ForgotPassword = () => <div>Forgot Password</div>;
 const EmailVerifyPage = () => <div>Email Verify</div>;
 const NotFound = () => <div>404 Not Found</div>;
 const Forbidden = () => <div>403 Forbidden</div>;
 const ModeratorUserManagement = () => <div>Moderator User Management</div>;
-const AdminDashboard = () => <div>Admin Dashboard</div>;
 
 const AppRouter = () => (
   <Router>
@@ -132,8 +137,22 @@ const AppRouter = () => (
       <Route element={<ProtectedRoute roles={["moderator"]}><ModeratorLayout /></ProtectedRoute>}>
         <Route path="/moderator/user-management" element={<ModeratorUserManagement />} />
       </Route>
-      <Route element={<ProtectedRoute roles={["admin"]}><AdminLayout /></ProtectedRoute>}>
+
+      {/* ==================================================== */}
+      {/* 6. ADMIN ROUTES                                      */}
+      {/* ==================================================== */}
+      <Route
+        element={
+          <ProtectedRoute roles={["admin"]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/transactions" element={<AdminTransactions />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
       </Route>
 
       <Route path="/forbidden" element={<Forbidden />} />
