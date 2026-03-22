@@ -1,14 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import heroBg from "../../assets/images/hero-bg.jpg";
 
 const Home = () => {
   const navigate = useNavigate();
+  const [showLocation, setShowLocation] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [showTime, setShowTime] = useState(false);
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [fromTime, setFromTime] = useState("10:00");
+  const [toTime, setToTime] = useState("11:30");
+  const [showBoxType, setShowBoxType] = useState(false);
+  const [boxType, setBoxType] = useState(null);
 
   return (
     // Bọc toàn bộ nội dung trong 1 thẻ div để kiểm soát màu nền chung
     <div className="w-full bg-white">
-      
       {/* Hero Section */}
       {/* LỚP 1: Ép giữa bằng Flex */}
       <section className="w-full flex justify-center py-8">
@@ -27,52 +34,186 @@ const Home = () => {
                 Tìm chỗ nghỉ ngơi lý tưởng tại TP.HCM
               </h1>
               <p className="text-white/90 text-lg md:text-xl font-medium max-w-xl mb-8">
-                Khám phá không gian riêng tư, tiện nghi và giá cả hợp lý ngay trung tâm thành phố.
+                Khám phá không gian riêng tư, tiện nghi và giá cả hợp lý ngay
+                trung tâm thành phố.
               </p>
             </div>
           </div>
 
           {/* Floating Search Bar */}
           <div className="relative -mt-12 mx-auto max-w-5xl px-4 lg:px-0">
-            <div className="bg-white p-4 rounded-2xl shadow-2xl border border-[#351a5b]/10 grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-              <div className="flex flex-col px-4 border-r border-slate-200">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#351a5b]">Địa điểm</span>
-                <input
-                  className="bg-transparent border-none focus:ring-0 p-0 text-slate-900 placeholder:text-slate-400 font-medium"
-                  placeholder="Quận tại TP.HCM"
-                  type="text"
-                />
-              </div>
-              <div className="flex flex-col px-4 border-r border-slate-200">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#351a5b]">Ngày nhận</span>
-                <input
-                  className="bg-transparent border-none focus:ring-0 p-0 text-slate-900 font-medium"
-                  type="date"
-                />
-              </div>
-              <div className="flex flex-col px-4 border-r border-slate-200">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#351a5b]">Thời lượng</span>
-                <select className="bg-transparent border-none focus:ring-0 p-0 text-slate-900 font-medium cursor-pointer">
-                  <option>Theo giờ</option>
-                  <option>Qua đêm</option>
-                  <option>Dài hạn</option>
-                </select>
-              </div>
-              <div className="flex items-center justify-between pl-4">
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#351a5b]">Khách</span>
-                  <input
-                    className="bg-transparent border-none focus:ring-0 p-0 text-slate-900 font-medium w-full"
-                    min="1"
-                    type="number"
-                    defaultValue="1"
-                  />
-                </div>
+            <div className="bg-white p-2 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 flex flex-col md:flex-row items-center gap-2">
+              {/* 1. ĐỊA ĐIỂM (Dropdown) */}
+              <div className="group relative flex-1 w-full border-r border-slate-100 last:border-0">
                 <button
-                  className="bg-[#351a5b] text-white p-4 rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity"
+                  onClick={() => setShowLocation(!showLocation)}
+                  className="w-full flex flex-col px-6 py-3 text-left hover:bg-slate-50 rounded-xl transition-colors"
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#4059AD] mb-1">
+                    Địa điểm
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-slate-400 text-lg">
+                      location_on
+                    </span>
+                    <span
+                      className={`text-sm font-extrabold truncate ${selectedLocation ? "text-slate-900" : "text-slate-400"}`}
+                    >
+                      {selectedLocation || "Bạn muốn đi đâu?"}
+                    </span>
+                  </div>
+                </button>
+
+                {showLocation && (
+                  <div className="absolute top-[110%] left-0 w-full md:w-64 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 z-50 animate-fade-in-down">
+                    {[
+                      "Quận 1",
+                      "Quận 3",
+                      "Quận 7",
+                      "Bình Thạnh",
+                      "Thủ Đức",
+                    ].map((loc) => (
+                      <button
+                        key={loc}
+                        onClick={() => {
+                          setSelectedLocation(loc);
+                          setShowLocation(false);
+                        }}
+                        className="w-full text-left px-5 py-3 hover:bg-blue-50 text-sm font-bold text-slate-700 flex justify-between items-center"
+                      >
+                        {loc}
+                        {selectedLocation === loc && (
+                          <span className="material-symbols-outlined text-[#4059AD] text-sm">
+                            check_circle
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 2. THỜI GIAN (Calendar + Hours) */}
+              <div className="group relative flex-[1.5] w-full border-r border-slate-100 last:border-0">
+                <button
+                  onClick={() => setShowTime(!showTime)}
+                  className="w-full flex flex-col px-6 py-3 text-left hover:bg-slate-50 rounded-xl transition-colors"
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#4059AD] mb-1">
+                    Thời gian
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-slate-400 text-lg">
+                      calendar_month
+                    </span>
+                    <span className="text-sm font-extrabold text-slate-900">
+                      {date} | {fromTime} - {toTime}
+                    </span>
+                  </div>
+                </button>
+
+                {showTime && (
+                  <div className="absolute top-[110%] left-0 w-full md:w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 p-5 z-50 animate-fade-in-down">
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase">
+                          Chọn ngày
+                        </span>
+                        <input
+                          type="date"
+                          value={date}
+                          onChange={(e) => setDate(e.target.value)}
+                          className="bg-slate-50 border-none rounded-lg p-2 text-sm font-bold text-slate-700 outline-none"
+                        />
+                      </div>
+                      <div className="flex gap-4">
+                        <div className="flex-1">
+                          <span className="text-[10px] font-bold text-[#4059AD] uppercase block mb-1">
+                            Từ
+                          </span>
+                          <input
+                            type="time"
+                            value={fromTime}
+                            onChange={(e) => setFromTime(e.target.value)}
+                            className="w-full text-xs font-bold bg-slate-50 rounded-lg p-2 outline-none"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-[10px] font-bold text-[#4059AD] uppercase block mb-1">
+                            Đến
+                          </span>
+                          <input
+                            type="time"
+                            value={toTime}
+                            onChange={(e) => setToTime(e.target.value)}
+                            className="w-full text-xs font-bold bg-slate-50 rounded-lg p-2 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowTime(false)}
+                        className="w-full bg-[#4059AD] text-white py-2 rounded-lg text-xs font-extrabold hover:bg-[#32488f]"
+                      >
+                        XÁC NHẬN
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. LOẠI PHÒNG (Box Type) */}
+              <div className="group relative flex-1 w-full">
+                <button
+                  onClick={() => setShowBoxType(!showBoxType)}
+                  className="w-full flex flex-col px-6 py-3 text-left hover:bg-slate-50 rounded-xl transition-colors"
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#4059AD] mb-1">
+                    Loại phòng
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-slate-400 text-lg">
+                      bed
+                    </span>
+                    <span
+                      className={`text-sm font-extrabold truncate ${boxType ? "text-slate-900" : "text-slate-400"}`}
+                    >
+                      {boxType || "Chọn loại phòng"}
+                    </span>
+                  </div>
+                </button>
+
+                {showBoxType && (
+                  <div className="absolute top-[110%] right-0 w-full md:w-56 bg-white rounded-xl shadow-2xl border border-slate-100 py-2 z-50 animate-fade-in-down">
+                    {["Single Box", "Double Box", "Family Box"].map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => {
+                          setBoxType(type);
+                          setShowBoxType(false);
+                        }}
+                        className="w-full text-left px-5 py-3 hover:bg-blue-50 text-sm font-bold text-slate-700 flex justify-between items-center"
+                      >
+                        {type}
+                        {boxType === type && (
+                          <span className="material-symbols-outlined text-[#4059AD] text-sm">
+                            check_circle
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* NÚT TÌM KIẾM */}
+              <div className="px-2 w-full md:w-auto">
+                <button
+                  className="bg-[#4059AD] text-white h-14 w-full md:w-14 rounded-xl flex items-center justify-center hover:bg-[#32488f] transition-all shadow-lg shadow-blue-100"
                   onClick={() => navigate("/search")}
                 >
-                  <span className="material-symbols-outlined">search</span>
+                  <span className="material-symbols-outlined text-2xl font-bold">
+                    search
+                  </span>
                 </button>
               </div>
             </div>
@@ -84,7 +225,9 @@ const Home = () => {
       <section className="w-full flex justify-center py-8">
         <div className="w-full max-w-[1200px] px-4 lg:px-0">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-extrabold">Chỗ nghỉ nổi bật tại TP.HCM</h2>
+            <h2 className="text-2xl font-extrabold">
+              Chỗ nghỉ nổi bật tại TP.HCM
+            </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Card 1 */}
@@ -96,13 +239,19 @@ const Home = () => {
                   alt="CyberBox District 1"
                 />
                 <button className="absolute top-3 right-3 text-white drop-shadow-md hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined fill-0 hover:fill-1">favorite</span>
+                  <span className="material-symbols-outlined fill-0 hover:fill-1">
+                    favorite
+                  </span>
                 </button>
               </div>
               <div className="flex justify-between items-start">
-                <h3 className="font-bold text-slate-900">CyberBox District 1</h3>
+                <h3 className="font-bold text-slate-900">
+                  CyberBox District 1
+                </h3>
                 <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm fill-1 text-yellow-500">star</span>
+                  <span className="material-symbols-outlined text-sm fill-1 text-yellow-500">
+                    star
+                  </span>
                   <span className="text-sm font-medium">4.92</span>
                 </div>
               </div>
@@ -126,7 +275,9 @@ const Home = () => {
               <div className="flex justify-between items-start">
                 <h3 className="font-bold">Zen Box Studio</h3>
                 <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm fill-1 text-yellow-500">star</span>
+                  <span className="material-symbols-outlined text-sm fill-1 text-yellow-500">
+                    star
+                  </span>
                   <span className="text-sm font-medium">4.85</span>
                 </div>
               </div>
@@ -150,7 +301,9 @@ const Home = () => {
               <div className="flex justify-between items-start">
                 <h3 className="font-bold">Sky Capsule Premium</h3>
                 <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm fill-1 text-yellow-500">star</span>
+                  <span className="material-symbols-outlined text-sm fill-1 text-yellow-500">
+                    star
+                  </span>
                   <span className="text-sm font-medium">4.98</span>
                 </div>
               </div>
@@ -174,7 +327,9 @@ const Home = () => {
               <div className="flex justify-between items-start">
                 <h3 className="font-bold">Quiet Corner Small Room</h3>
                 <div className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-sm fill-1 text-yellow-500">star</span>
+                  <span className="material-symbols-outlined text-sm fill-1 text-yellow-500">
+                    star
+                  </span>
                   <span className="text-sm font-medium">4.76</span>
                 </div>
               </div>
@@ -192,9 +347,12 @@ const Home = () => {
         <div className="w-full max-w-[1200px] px-4 lg:px-0">
           <div className="bg-[#351a5b]/5 rounded-2xl p-8 flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1">
-              <h2 className="text-3xl font-bold mb-4">Tìm chỗ nghỉ trên bản đồ</h2>
+              <h2 className="text-3xl font-bold mb-4">
+                Tìm chỗ nghỉ trên bản đồ
+              </h2>
               <p className="text-slate-600 mb-6 text-lg">
-                Dễ dàng tìm thấy các sleepbox gần nhất với vị trí của bạn hoặc gần các địa điểm du lịch nổi tiếng tại TP.HCM.
+                Dễ dàng tìm thấy các sleepbox gần nhất với vị trí của bạn hoặc
+                gần các địa điểm du lịch nổi tiếng tại TP.HCM.
               </p>
               <button
                 className="bg-slate-900 text-white px-6 py-3 rounded-lg font-bold hover:shadow-lg transition-all"
@@ -213,7 +371,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
     </div>
   );
 };

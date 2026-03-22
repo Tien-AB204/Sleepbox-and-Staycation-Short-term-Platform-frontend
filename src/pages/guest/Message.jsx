@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ChatPage = () => {
+const Message = () => {
   return (
     <div className="w-full max-w-[1200px] mx-auto px-4 lg:px-0 py-8">
       <h1 className="text-2xl font-bold text-[#1e1b4b] mb-6">Tin nhắn</h1>
@@ -13,4 +13,4 @@ const ChatPage = () => {
   );
 };
 
-export default ChatPage;
+export default Message;

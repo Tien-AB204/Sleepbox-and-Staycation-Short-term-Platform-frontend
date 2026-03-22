@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const instance = axios.create({
-  baseURL: "https://boxhub-sleepbox-platform-backend.onrender.com",
+  baseURL: "https://boxhub-sleepbox-platform-backend.onrender.com/api",
   timeout: 15000,
   headers: {
     "Content-Type": "application/json",

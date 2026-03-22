@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  Outlet,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout";
 import RegisterPage from "../pages/auth/RegisterPage";
 import { default as GuestLayout } from "../layouts/GuestLayout";
@@ -17,18 +11,18 @@ import ProtectedRoute from "./ProtectedRoute";
 import InternalLoginPage from "../pages/auth/InternalLoginPage";
 
 // Guest Pages
-import Home from "../pages/guest/HomePage";
+import Home from "../pages/guest/Homepage";
 import Search from "../pages/guest/Search";
 import RoomDetail from "../pages/guest/RoomDetail";
 import BookingSummary from "../pages/guest/BookingSummary";
 import Profile from "../pages/guest/Profile";
 import MyBookings from "../pages/guest/MyBookings";
 import History from "../pages/guest/History";
-import ChatPage from "../pages/guest/ChatPage";
+import Message from "../pages/guest/Message";
 import Notifications from "../pages/guest/Notifications";
 import Favorites from "../pages/guest/Favorites";
 
-// Host Pages (UI từ bản Stitch)
+// Host Pages
 import HostDashboard from "../pages/host/HostDashboard";
 import HostBookings from "../pages/host/HostBookings";
 import HostCalendar from "../pages/host/HostCalendar";
@@ -54,7 +48,6 @@ const ForgotPassword = () => <div>Forgot Password</div>;
 const EmailVerifyPage = () => <div>Email Verify</div>;
 const NotFound = () => <div>404 Not Found</div>;
 const Forbidden = () => <div>403 Forbidden</div>;
-
 const ModeratorUserManagement = () => <div>Moderator User Management</div>;
 const AdminDashboard = () => <div>Admin Dashboard</div>;
 
@@ -72,9 +65,6 @@ const AppRouter = () => (
         <Route path="/email-verify" element={<EmailVerifyPage />} />
       </Route>
 
-      {/* ==================================================== */}
-      {/* 1. PUBLIC GUEST ROUTES (Ai cũng xem được)            */}
-      {/* ==================================================== */}
       <Route element={<GuestLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/room/:id" element={<RoomDetail />} />
@@ -82,30 +72,17 @@ const AppRouter = () => (
 
       <Route path="/search" element={<Search />} />
 
-      {/* ==================================================== */}
-      {/* 2. PROTECTED GUEST ROUTES (Chỉ Guest mới được vào)   */}
-      {/* ==================================================== */}
-      <Route
-        element={
-          <ProtectedRoute roles={["guest"]}>
-            <Outlet />
-          </ProtectedRoute>
-        }
-      >
+      {/* Chỉ cần là User đã đăng nhập (không quan tâm role gì) là thanh toán được */}
+      <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
         <Route path="/booking-summary" element={<BookingSummary />} />
       </Route>
 
-      <Route
-        element={
-          <ProtectedRoute roles={["guest"]}>
-            <GuestLayout />
-          </ProtectedRoute>
-        }
-      >
+      {/* Các trang Profile, Lịch sử... bọc trong GuestLayout và chỉ yêu cầu Đã Đăng Nhập */}
+      <Route element={<ProtectedRoute><GuestLayout /></ProtectedRoute>}>
         <Route path="/profile" element={<Profile />} />
         <Route path="/my-bookings" element={<MyBookings />} />
         <Route path="/history" element={<History />} />
-        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/message" element={<Message />} /> 
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/favorites" element={<Favorites />} />
       </Route>
@@ -152,34 +129,13 @@ const AppRouter = () => (
         <Route path="/staff/verification" element={<StaffVerification />} />
         <Route path="/staff/profile" element={<StaffProfile />} />
       </Route>
-
-      {/* ==================================================== */}
-      {/* 5. MODERATOR ROUTES                                  */}
-      {/* ==================================================== */}
-      <Route
-        element={
-          <ProtectedRoute roles={["moderator"]}>
-            <ModeratorLayout />
-          </ProtectedRoute>
-        }
-      >
+      <Route element={<ProtectedRoute roles={["moderator"]}><ModeratorLayout /></ProtectedRoute>}>
         <Route path="/moderator/user-management" element={<ModeratorUserManagement />} />
       </Route>
-
-      {/* ==================================================== */}
-      {/* 6. ADMIN ROUTES                                      */}
-      {/* ==================================================== */}
-      <Route
-        element={
-          <ProtectedRoute roles={["admin"]}>
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
+      <Route element={<ProtectedRoute roles={["admin"]}><AdminLayout /></ProtectedRoute>}>
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Route>
 
-      {/* Common */}
       <Route path="/forbidden" element={<Forbidden />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
