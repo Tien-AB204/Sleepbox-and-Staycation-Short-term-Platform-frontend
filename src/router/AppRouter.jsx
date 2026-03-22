@@ -7,7 +7,6 @@ import {
   Outlet,
 } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout";
-import LoginPage from "../pages/auth/LoginPage";
 import RegisterPage from "../pages/auth/RegisterPage";
 import { default as GuestLayout } from "../layouts/GuestLayout";
 import { default as HostLayout } from "../layouts/HostLayout";
@@ -15,6 +14,7 @@ import { default as StaffLayout } from "../layouts/StaffLayout";
 import { default as ModeratorLayout } from "../layouts/ModeratorLayout";
 import { default as AdminLayout } from "../layouts/AdminLayout";
 import ProtectedRoute from "./ProtectedRoute";
+import InternalLoginPage from "../pages/auth/InternalLoginPage";
 
 // Guest Pages
 import Home from "../pages/guest/HomePage";
@@ -28,24 +28,45 @@ import ChatPage from "../pages/guest/ChatPage";
 import Notifications from "../pages/guest/Notifications";
 import Favorites from "../pages/guest/Favorites";
 
+// Host Pages (UI từ bản Stitch)
+import HostDashboard from "../pages/host/HostDashboard";
+import HostBookings from "../pages/host/HostBookings";
+import HostCalendar from "../pages/host/HostCalendar";
+import HostFacilities from "../pages/host/HostFacilities";
+import HostSleepboxes from "../pages/host/HostSleepboxes";
+import HostPricing from "../pages/host/HostPricing";
+import HostStaff from "../pages/host/HostStaff";
+import HostStatistics from "../pages/host/HostStatistics";
+import HostMessages from "../pages/host/HostMessages";
+import HostDisputes from "../pages/host/HostDisputes";
+
+// Staff pages
+import StaffDashboard from "../pages/staff/StaffDashboard";
+import StaffCheckInOut from "../pages/staff/StaffCheckInOut";
+import StaffBoxes from "../pages/staff/StaffBoxes";
+import StaffNotifications from "../pages/staff/StaffNotifications";
+import StaffIssues from "../pages/staff/StaffIssues";
+import StaffVerification from "../pages/staff/StaffVerification";
+import StaffProfile from "../pages/staff/StaffProfile";
+
 // Các trang placeholder khác
 const ForgotPassword = () => <div>Forgot Password</div>;
 const EmailVerifyPage = () => <div>Email Verify</div>;
 const NotFound = () => <div>404 Not Found</div>;
 const Forbidden = () => <div>403 Forbidden</div>;
 
-// Host/Staff/Moderator/Admin placeholder
-const HostDashboard = () => <div>Host Dashboard</div>;
-const StaffCheckInOut = () => <div>Staff CheckInOut</div>;
 const ModeratorUserManagement = () => <div>Moderator User Management</div>;
 const AdminDashboard = () => <div>Admin Dashboard</div>;
 
 const AppRouter = () => (
   <Router>
     <Routes>
+      {/* Đăng nhập thống nhất (guest / host / nội bộ) */}
+      <Route path="/internal/login" element={<InternalLoginPage />} />
+      <Route path="/login" element={<Navigate to="/internal/login" replace />} />
+
       {/* Auth Routes */}
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/email-verify" element={<EmailVerifyPage />} />
@@ -64,18 +85,16 @@ const AppRouter = () => (
       {/* ==================================================== */}
       {/* 2. PROTECTED GUEST ROUTES (Chỉ Guest mới được vào)   */}
       {/* ==================================================== */}
-      {/* Booking Summary cần đăng nhập để thanh toán */}
       <Route
         element={
           <ProtectedRoute roles={["guest"]}>
-            <Outlet /> {/* Dùng Outlet trần vì file này tự có Layout riêng */}
+            <Outlet />
           </ProtectedRoute>
         }
       >
         <Route path="/booking-summary" element={<BookingSummary />} />
       </Route>
 
-      {/* Các trang Profile, Lịch sử... bọc trong GuestLayout */}
       <Route
         element={
           <ProtectedRoute roles={["guest"]}>
@@ -92,16 +111,26 @@ const AppRouter = () => (
       </Route>
 
       {/* ==================================================== */}
-      {/* 3. HOST ROUTES                                       */}
+      {/* 3. HOST ROUTES — guest đã đăng nhập có thể xem UI host */}
       {/* ==================================================== */}
       <Route
         element={
-          <ProtectedRoute roles={["host"]}>
+          <ProtectedRoute roles={["host", "guest"]}>
             <HostLayout />
           </ProtectedRoute>
         }
       >
+        <Route path="/host" element={<Navigate to="/host/dashboard" replace />} />
         <Route path="/host/dashboard" element={<HostDashboard />} />
+        <Route path="/host/bookings" element={<HostBookings />} />
+        <Route path="/host/calendar" element={<HostCalendar />} />
+        <Route path="/host/facilities" element={<HostFacilities />} />
+        <Route path="/host/sleepboxes" element={<HostSleepboxes />} />
+        <Route path="/host/pricing" element={<HostPricing />} />
+        <Route path="/host/staff" element={<HostStaff />} />
+        <Route path="/host/statistics" element={<HostStatistics />} />
+        <Route path="/host/messages" element={<HostMessages />} />
+        <Route path="/host/disputes" element={<HostDisputes />} />
       </Route>
 
       {/* ==================================================== */}
@@ -114,7 +143,14 @@ const AppRouter = () => (
           </ProtectedRoute>
         }
       >
+        <Route path="/staff" element={<Navigate to="/staff/dashboard" replace />} />
+        <Route path="/staff/dashboard" element={<StaffDashboard />} />
         <Route path="/staff/check-in-out" element={<StaffCheckInOut />} />
+        <Route path="/staff/boxes" element={<StaffBoxes />} />
+        <Route path="/staff/notifications" element={<StaffNotifications />} />
+        <Route path="/staff/issues" element={<StaffIssues />} />
+        <Route path="/staff/verification" element={<StaffVerification />} />
+        <Route path="/staff/profile" element={<StaffProfile />} />
       </Route>
 
       {/* ==================================================== */}

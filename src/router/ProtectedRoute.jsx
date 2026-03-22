@@ -10,7 +10,7 @@ const ProtectedRoute = ({ roles = [], children }) => {
   if (loading) return <div>Loading...</div>;
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/internal/login" state={{ from: location }} replace />;
   }
 
   if (roles.length > 0 && !roles.includes(user.role)) {

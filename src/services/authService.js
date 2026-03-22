@@ -1,6 +1,10 @@
 import axios from "../config/axios";
+import { mockLogin, isMockAuthEnabled } from "../mocks/mockAuth";
 
 export const login = async (email, password) => {
+  if (isMockAuthEnabled()) {
+    return mockLogin(email, password);
+  }
   try {
     const res = await axios.post("/api/auth/login", { email, password });
     return res.data; // { accessToken, user: { ... } }

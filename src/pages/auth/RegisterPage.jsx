@@ -24,7 +24,7 @@ const RegisterPage = () => {
     try {
       const data = await registerService({ email, password, confirmPassword });
       setSuccess("Đăng ký thành công! Vui lòng đăng nhập.");
-      setTimeout(() => navigate("/login"), 1500);
+      setTimeout(() => navigate("/internal/login"), 1500);
     } catch (err) {
       setError(err.toString());
     } finally {
@@ -79,7 +79,7 @@ const RegisterPage = () => {
       </form>
       <div className="mt-4 text-sm text-center">
         <span>Đã có tài khoản? </span>
-        <a href="/login" className="text-blue-600 hover:underline">
+        <a href="/internal/login" className="text-blue-600 hover:underline">
           Đăng nhập
         </a>
       </div>
