@@ -136,7 +136,7 @@ const GuestLayout = () => {
 
             {/* Trở thành Host (Nút text) */}
             <Link
-              to="/host/dashboard"
+              to="/host/register/1"
               className="hidden md:flex font-bold text-sm text-[#4059AD] hover:bg-slate-50 px-4 py-2 rounded-full transition ml-1"
             >
               Trở thành host

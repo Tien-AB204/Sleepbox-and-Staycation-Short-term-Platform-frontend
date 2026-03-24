@@ -9,6 +9,7 @@ const ADMIN_AVATAR_URL =
 const navItems = [
   { to: "/admin/dashboard", label: "Bảng điều khiển", icon: "dashboard" },
   { to: "/admin/users", label: "Người dùng", icon: "group" },
+  { to: "/admin/moderators", label: "Moderators", icon: "gavel" },
   { to: "/admin/transactions", label: "Giao dịch", icon: "receipt_long" },
   { to: "/admin/settings", label: "Cài đặt hệ thống", icon: "settings" },
 ];

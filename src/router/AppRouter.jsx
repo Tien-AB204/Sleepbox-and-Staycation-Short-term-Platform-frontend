@@ -8,10 +8,13 @@ import { default as StaffLayout } from "../layouts/StaffLayout";
 import { default as ModeratorLayout } from "../layouts/ModeratorLayout";
 import { default as AdminLayout } from "../layouts/AdminLayout";
 import ProtectedRoute from "./ProtectedRoute";
+import HostRouteGuard from "./HostRouteGuard";
 import InternalLoginPage from "../pages/auth/InternalLoginPage";
+import HostOnboardingLayout from "../layouts/HostOnboardingLayout";
+import HostOnboardingPage from "../pages/host/onboarding/HostOnboardingPage";
 
 // Guest Pages
-import Home from "../pages/guest/Homepage";
+import Home from "../pages/guest/HomePage";
 import Search from "../pages/guest/Search";
 import RoomDetail from "../pages/guest/RoomDetail";
 import BookingSummary from "../pages/guest/BookingSummary";
@@ -46,6 +49,8 @@ import StaffProfile from "../pages/staff/StaffProfile";
 // Admin (Stitch)
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminUsers from "../pages/admin/AdminUsers";
+import AdminModerators from "../pages/admin/AdminModerators";
+import AdminModeratorCreate from "../pages/admin/AdminModeratorCreate";
 import AdminTransactions from "../pages/admin/AdminTransactions";
 import AdminSettings from "../pages/admin/AdminSettings";
 
@@ -92,13 +97,21 @@ const AppRouter = () => (
         <Route path="/favorites" element={<Favorites />} />
       </Route>
 
+      {/* Đăng ký Host — 7 bước (Stitch), không cần đăng nhập để bắt đầu */}
+      <Route path="/host/register" element={<HostOnboardingLayout />}>
+        <Route index element={<Navigate to="/host/register/1" replace />} />
+        <Route path=":step" element={<HostOnboardingPage />} />
+      </Route>
+
       {/* ==================================================== */}
-      {/* 3. HOST ROUTES — guest đã đăng nhập có thể xem UI host */}
+      {/* 3. HOST ROUTES — sau khi hoàn tất đăng ký host (hoặc role host) */}
       {/* ==================================================== */}
       <Route
         element={
           <ProtectedRoute roles={["host", "guest"]}>
-            <HostLayout />
+            <HostRouteGuard>
+              <HostLayout />
+            </HostRouteGuard>
           </ProtectedRoute>
         }
       >
@@ -151,6 +164,8 @@ const AppRouter = () => (
         <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/moderators" element={<AdminModerators />} />
+        <Route path="/admin/moderators/new" element={<AdminModeratorCreate />} />
         <Route path="/admin/transactions" element={<AdminTransactions />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
       </Route>
