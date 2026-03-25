@@ -285,7 +285,7 @@ const Search = () => {
                     
                     <hr className="my-1 border-slate-200" />
                     
-                    <Link to="/host/dashboard" className="px-5 py-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                    <Link to="/host/register/1" className="px-5 py-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
                       <div className="flex flex-col pr-4">
                         <span className="font-bold text-slate-900 text-base mb-1">Trở thành host</span>
                         <span className="text-xs text-slate-500 font-normal leading-relaxed">
