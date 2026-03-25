@@ -77,10 +77,11 @@ const AppRouter = () => (
 
       <Route element={<GuestLayout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/search" element={<Search />} />
         <Route path="/room/:id" element={<RoomDetail />} />
       </Route>
 
-      <Route path="/search" element={<Search />} />
+      
 
       {/* Chỉ cần là User đã đăng nhập (không quan tâm role gì) là thanh toán được */}
       <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>

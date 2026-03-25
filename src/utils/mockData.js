@@ -1,4 +1,19 @@
-// Dữ liệu giả cho phòng sleepbox
+import q1 from "../assets/images/quan-1.png"; 
+import q3 from "../assets/images/quan-3.png"; 
+import q5 from "../assets/images/quan-5.png"; 
+import q7 from "../assets/images/quan-7.png"; 
+import thuDuc from "../assets/images/thu-duc.png"; 
+import binhThanh from "../assets/images/binh-thanh.png";
+
+export const DESTINATIONS = [
+  { id: "q1", name: "Quận 1", image: q1, count: 120 },
+  { id: "q3", name: "Quận 3", image: q3, count: 85 },
+  { id: "q5", name: "Quận 5", image: q5, count: 42 },
+  { id: "q7", name: "Quận 7", image: q7, count: 64 },
+  { id: "thuduc", name: "Thành phố Thủ Đức", image: thuDuc, count: 92 },
+  { id: "binhthanh", name: "Quận Bình Thạnh", image: binhThanh, count: 78 },
+];
+
 export const rooms = [
   {
     id: 1,
