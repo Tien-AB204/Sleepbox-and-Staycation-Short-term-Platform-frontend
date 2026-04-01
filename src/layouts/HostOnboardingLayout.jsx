@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Link, Outlet, useParams, useNavigate } from "react-router-dom";
 import { HOST_STEPS } from "../pages/host/onboarding/hostOnboardingSteps";
 
@@ -6,6 +6,13 @@ export default function HostOnboardingLayout() {
   const { step } = useParams();
   const navigate = useNavigate();
   const current = Math.min(7, Math.max(1, parseInt(step, 10) || 1));
+  const prevStepRef = useRef(null);
+  let slideClass = "animate-host-onboarding-next";
+  const prev = prevStepRef.current;
+  if (prev !== null && prev !== current) {
+    slideClass = current > prev ? "animate-host-onboarding-next" : "animate-host-onboarding-prev";
+  }
+  prevStepRef.current = current;
   const pct = Math.round((current / 7) * 100);
   const stepLabel = HOST_STEPS.find((s) => s.n === current)?.label ?? "";
 
@@ -79,8 +86,11 @@ export default function HostOnboardingLayout() {
           </div>
         </div>
 
-        <main className="mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-10">
-          <Outlet />
+        <main className="mx-auto max-w-5xl overflow-x-hidden px-4 py-6 sm:px-8 sm:py-10">
+          {/* Không dùng key={step} ở đây: mỗi bước đổi key sẽ remount <Outlet /> → HostOnboardingPage mất hết state (file upload chỉ nằm trong RAM). */}
+          <div className={slideClass}>
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

@@ -69,7 +69,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }) => {
 
       /* BẢN CHÍNH THỨC SAU NÀY (Khi BE có API POST /api/auth/google):
       try {
-        const res = await axios.post("/api/auth/google", { token: tokenResponse.access_token });
+        const res = await axios.post("/auth/google", { token: tokenResponse.access_token });
         login(res.data.user, res.data.accessToken);
         onClose();
       } catch(err) { setError("Lỗi BE"); }
