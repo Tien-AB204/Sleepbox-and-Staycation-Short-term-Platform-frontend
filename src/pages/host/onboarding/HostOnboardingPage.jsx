@@ -139,6 +139,63 @@ const validateFullRegisterDraft = (d, files) => {
   return errs;
 };
 
+const MAX_ID_CARD_IMAGE_BYTES = 5 * 1024 * 1024;
+const ID_CARD_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+/** Tên đăng nhập: email hợp lệ hoặc 4–50 ký tự [a-z0-9._-] (không dấu cách). */
+const validateHostUsername = (raw) => {
+  const s = String(raw ?? "").trim();
+  if (!s) return "Vui lòng nhập tên đăng nhập.";
+  if (s.includes("@")) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return "Email không đúng định dạng.";
+    return "";
+  }
+  if (s.length < 4 || s.length > 50) return "Tên đăng nhập cần 4–50 ký tự.";
+  if (!/^[a-z0-9._-]+$/i.test(s)) return "Chỉ dùng chữ không dấu, số, dấu chấm, gạch dưới và gạch ngang.";
+  return "";
+};
+
+const VI_NAME_RE = /^[\p{L}\s'.-]+$/u;
+const validateVietnameseNamePart = (raw, fieldLabel) => {
+  const t = String(raw ?? "").trim();
+  if (!t) return `Vui lòng nhập ${fieldLabel}.`;
+  if (/\d/.test(t)) return `${fieldLabel} không được chứa chữ số.`;
+  if (!VI_NAME_RE.test(t)) return `${fieldLabel} chỉ gồm chữ (có dấu), khoảng trắng, dấu . ' -`;
+  if (t.length > 80) return `${fieldLabel} tối đa 80 ký tự.`;
+  return "";
+};
+
+const normalizeVnPhoneDigits = (raw) => {
+  let s = String(raw ?? "").replace(/[\s.-]/g, "");
+  if (s.startsWith("+84")) s = `0${s.slice(3)}`;
+  else if (s.startsWith("84") && s.length >= 10) s = `0${s.slice(2)}`;
+  return s;
+};
+
+const validateVietnamPhone = (raw) => {
+  const s = normalizeVnPhoneDigits(raw);
+  if (!s) return "Vui lòng nhập số điện thoại.";
+  if (!/^0[35789]\d{8}$/.test(s)) {
+    return "Số điện thoại Việt Nam: 10 số, đầu 03 / 05 / 07 / 08 / 09 (có thể nhập +84…).";
+  }
+  return "";
+};
+
+const validateCitizenIdNumber = (raw) => {
+  const d = String(raw ?? "").replace(/\s/g, "");
+  if (!d) return "Vui lòng nhập số CCCD/CMND.";
+  if (!/^\d+$/.test(d)) return "Chỉ nhập chữ số.";
+  if (d.length !== 9 && d.length !== 12) return "CMND: 9 số — CCCD: 12 số.";
+  return "";
+};
+
+const validateIdCardImageFile = (file) => {
+  if (!(file instanceof File) || file.size <= 0) return "Vui lòng chọn ảnh.";
+  if (!ID_CARD_IMAGE_TYPES.has(file.type)) return "Chỉ dùng ảnh JPG, PNG hoặc WebP.";
+  if (file.size > MAX_ID_CARD_IMAGE_BYTES) return "Ảnh tối đa 5MB.";
+  return "";
+};
+
 /** 6 ô OTP — giống layout Stitch */
 function OtpSix({ onComplete }) {
   const [digits, setDigits] = useState(() => Array(6).fill(""));
@@ -230,6 +287,8 @@ export default function HostOnboardingPage() {
   const [brandAvatarPreviewUrl, setBrandAvatarPreviewUrl] = useState(null);
   const [brandAvatarFileLabel, setBrandAvatarFileLabel] = useState("");
   const [apiFieldErrors, setApiFieldErrors] = useState({});
+  /** Lỗi validate tức thì bước 3 (ưu tiên hiển thị cùng lỗi API). */
+  const [step3FieldErrors, setStep3FieldErrors] = useState({});
 
   const clearApiField = (key) => {
     setApiFieldErrors((prev) => {
@@ -244,6 +303,31 @@ export default function HostOnboardingPage() {
   const inpCls = (fieldKey, extra = "") =>
     [inputField, extra, apiFieldErrors[fieldKey] ? inputErrRing : ""].filter(Boolean).join(" ");
 
+  const inpClsStep3 = (fieldKey, extra = "") =>
+    [
+      inputField,
+      extra,
+      apiFieldErrors[fieldKey] || step3FieldErrors[fieldKey] ? inputErrRing : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+  /** Ưu tiên lỗi API (sau submit); khi đang gõ, `clearApiField` xóa API và còn validate client. */
+  const step3Msg = (key) => apiFieldErrors[key] || step3FieldErrors[key];
+
+  const bindStep3ValidatedInput = (key, validator) => ({
+    onInput: (e) => {
+      clearApiField(key);
+      const msg = validator(e.target.value);
+      setStep3FieldErrors((prev) => {
+        const next = { ...prev };
+        if (msg) next[key] = msg;
+        else delete next[key];
+        return next;
+      });
+    },
+  });
+
   const showApiErrOutsideStep = (stepKeys) =>
     Object.keys(apiFieldErrors).length > 0 && Object.keys(apiFieldErrors).some((k) => !stepKeys.has(k));
 
@@ -252,6 +336,10 @@ export default function HostOnboardingPage() {
       navigate("/host/register/1", { replace: true });
     }
   }, [step, navigate]);
+
+  useEffect(() => {
+    if (current !== 3) setStep3FieldErrors({});
+  }, [current]);
 
   useEffect(() => {
     if (current !== 3) {
@@ -332,17 +420,33 @@ export default function HostOnboardingPage() {
       URL.revokeObjectURL(idFrontBlobRef.current);
       idFrontBlobRef.current = null;
     }
-    if (file && file.type.startsWith("image/")) {
-      const url = URL.createObjectURL(file);
-      idFrontBlobRef.current = url;
-      setIdFrontPreviewUrl(url);
-      setIdFrontFileLabel(file.name);
-      clearApiField("representativeFront");
-      if (syncInput) assignToInput(idFrontInputRef, file);
-    } else {
+    setStep3FieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.representativeFront;
+      return next;
+    });
+
+    if (!file) {
       setIdFrontPreviewUrl(null);
       setIdFrontFileLabel("");
+      return;
     }
+
+    setIdFrontFileLabel(file.name);
+
+    const fileErr = validateIdCardImageFile(file);
+    if (fileErr) {
+      setStep3FieldErrors((prev) => ({ ...prev, representativeFront: fileErr }));
+      setIdFrontPreviewUrl(null);
+      if (syncInput) assignToInput(idFrontInputRef, file);
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    idFrontBlobRef.current = url;
+    setIdFrontPreviewUrl(url);
+    clearApiField("representativeFront");
+    if (syncInput) assignToInput(idFrontInputRef, file);
   };
 
   const applyBackFile = (file, syncInput = false) => {
@@ -350,17 +454,33 @@ export default function HostOnboardingPage() {
       URL.revokeObjectURL(idBackBlobRef.current);
       idBackBlobRef.current = null;
     }
-    if (file && file.type.startsWith("image/")) {
-      const url = URL.createObjectURL(file);
-      idBackBlobRef.current = url;
-      setIdBackPreviewUrl(url);
-      setIdBackFileLabel(file.name);
-      clearApiField("representativeBack");
-      if (syncInput) assignToInput(idBackInputRef, file);
-    } else {
+    setStep3FieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.representativeBack;
+      return next;
+    });
+
+    if (!file) {
       setIdBackPreviewUrl(null);
       setIdBackFileLabel("");
+      return;
     }
+
+    setIdBackFileLabel(file.name);
+
+    const fileErr = validateIdCardImageFile(file);
+    if (fileErr) {
+      setStep3FieldErrors((prev) => ({ ...prev, representativeBack: fileErr }));
+      setIdBackPreviewUrl(null);
+      if (syncInput) assignToInput(idBackInputRef, file);
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    idBackBlobRef.current = url;
+    setIdBackPreviewUrl(url);
+    clearApiField("representativeBack");
+    if (syncInput) assignToInput(idBackInputRef, file);
   };
 
   const onIdFrontFileChange = (e) => {
@@ -374,13 +494,13 @@ export default function HostOnboardingPage() {
   const onIdFrontDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) applyFrontFile(file, true);
+    if (file) applyFrontFile(file, true);
   };
 
   const onIdBackDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) applyBackFile(file, true);
+    if (file) applyBackFile(file, true);
   };
 
   const applyCompanyRegFile = (file, syncInput = false) => {
@@ -812,12 +932,24 @@ export default function HostOnboardingPage() {
                   idNumber: fd.get("idNumber"),
                 };
                 setOtpError("");
-                if (!(frontIdFile instanceof File) || frontIdFile.size <= 0) {
-                  setOtpError("Vui lòng tải ảnh mặt trước CCCD/CMND.");
-                  return;
-                }
-                if (!(backIdFile instanceof File) || backIdFile.size <= 0) {
-                  setOtpError("Vui lòng tải ảnh mặt sau CCCD/CMND.");
+                const clientErrs = {};
+                const eu = validateHostUsername(username);
+                if (eu) clientErrs.username = eu;
+                const eln = validateVietnameseNamePart(lastName, "Họ");
+                if (eln) clientErrs.lastName = eln;
+                const efn = validateVietnameseNamePart(firstName, "Tên đệm và tên");
+                if (efn) clientErrs.firstName = efn;
+                const ep = validateVietnamPhone(fd.get("phone"));
+                if (ep) clientErrs.phone = ep;
+                const eid = validateCitizenIdNumber(fd.get("idNumber"));
+                if (eid) clientErrs.idNumber = eid;
+                const eFront = validateIdCardImageFile(frontIdFile instanceof File ? frontIdFile : null);
+                if (eFront) clientErrs.representativeFront = eFront;
+                const eBack = validateIdCardImageFile(backIdFile instanceof File ? backIdFile : null);
+                if (eBack) clientErrs.representativeBack = eBack;
+                setStep3FieldErrors(clientErrs);
+                if (Object.keys(clientErrs).length > 0) {
+                  setOtpError("Vui lòng sửa các trường chưa hợp lệ (viền đỏ).");
                   return;
                 }
                 const merged = { ...draft, ...payload };
@@ -835,6 +967,7 @@ export default function HostOnboardingPage() {
                     representativeBack: backIdFile,
                   }));
                   setApiFieldErrors({});
+                  setStep3FieldErrors({});
                   setOtpError("");
                   go(4);
                 } catch (error) {
@@ -857,12 +990,12 @@ export default function HostOnboardingPage() {
                       maxLength={64}
                       autoComplete="username"
                       defaultValue={draft.username || ""}
-                      className={inpCls("username")}
-                      placeholder="VD: nguyenvanan hoặc host_hcm_01"
-                      onInput={() => clearApiField("username")}
+                      className={inpClsStep3("username")}
+                      placeholder="VD: nguyenvanan hoặc email@domain.com"
+                      {...bindStep3ValidatedInput("username", validateHostUsername)}
                     />
-                    {apiFieldErrors.username ? (
-                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.username}</p>
+                    {step3Msg("username") ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("username")}</p>
                     ) : null}
                   </div>
 
@@ -880,12 +1013,12 @@ export default function HostOnboardingPage() {
                           required
                           autoComplete="family-name"
                           defaultValue={nameDefaults.lastName}
-                          className={inpCls("lastName", "mt-1.5")}
+                          className={inpClsStep3("lastName", "mt-1.5")}
                           placeholder="Ví dụ: Nguyễn"
-                          onInput={() => clearApiField("lastName")}
+                          {...bindStep3ValidatedInput("lastName", (v) => validateVietnameseNamePart(v, "Họ"))}
                         />
-                        {apiFieldErrors.lastName ? (
-                          <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.lastName}</p>
+                        {step3Msg("lastName") ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("lastName")}</p>
                         ) : null}
                       </div>
                       <div>
@@ -898,12 +1031,12 @@ export default function HostOnboardingPage() {
                           required
                           autoComplete="given-name"
                           defaultValue={nameDefaults.firstName}
-                          className={inpCls("firstName", "mt-1.5")}
+                          className={inpClsStep3("firstName", "mt-1.5")}
                           placeholder="Ví dụ: Văn An"
-                          onInput={() => clearApiField("firstName")}
+                          {...bindStep3ValidatedInput("firstName", (v) => validateVietnameseNamePart(v, "Tên đệm và tên"))}
                         />
-                        {apiFieldErrors.firstName ? (
-                          <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.firstName}</p>
+                        {step3Msg("firstName") ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("firstName")}</p>
                         ) : null}
                       </div>
                     </div>
@@ -923,12 +1056,12 @@ export default function HostOnboardingPage() {
                           required
                           autoComplete="tel"
                           defaultValue={draft.phone || ""}
-                          className={inpCls("phone", "mt-1.5")}
-                          placeholder="0xxx xxx xxx"
-                          onInput={() => clearApiField("phone")}
+                          className={inpClsStep3("phone", "mt-1.5")}
+                          placeholder="0xxx xxx xxx hoặc +84…"
+                          {...bindStep3ValidatedInput("phone", validateVietnamPhone)}
                         />
-                        {apiFieldErrors.phone ? (
-                          <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.phone}</p>
+                        {step3Msg("phone") ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("phone")}</p>
                         ) : null}
                       </div>
                       <div>
@@ -942,12 +1075,12 @@ export default function HostOnboardingPage() {
                           inputMode="numeric"
                           autoComplete="off"
                           defaultValue={draft.idNumber || ""}
-                          className={inpCls("idNumber", "mt-1.5")}
-                          placeholder="12 chữ số"
-                          onInput={() => clearApiField("idNumber")}
+                          className={inpClsStep3("idNumber", "mt-1.5")}
+                          placeholder="9 số (CMND) hoặc 12 số (CCCD)"
+                          {...bindStep3ValidatedInput("idNumber", validateCitizenIdNumber)}
                         />
-                        {apiFieldErrors.idNumber ? (
-                          <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.idNumber}</p>
+                        {step3Msg("idNumber") ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("idNumber")}</p>
                         ) : null}
                       </div>
                     </div>
@@ -1000,7 +1133,7 @@ export default function HostOnboardingPage() {
                       }}
                       onDrop={onIdFrontDrop}
                       className={`relative w-full cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${
-                        apiFieldErrors.representativeFront
+                        step3Msg("representativeFront")
                           ? "border-red-500 bg-red-50/40"
                           : idFrontPreviewUrl
                             ? "border-slate-200 bg-slate-100/90"
@@ -1027,8 +1160,8 @@ export default function HostOnboardingPage() {
                         {idFrontFileLabel}
                       </p>
                     ) : null}
-                    {apiFieldErrors.representativeFront ? (
-                      <p className="text-xs font-medium text-red-600">{apiFieldErrors.representativeFront}</p>
+                    {step3Msg("representativeFront") ? (
+                      <p className="text-xs font-medium text-red-600">{step3Msg("representativeFront")}</p>
                     ) : null}
                   </div>
 
@@ -1065,7 +1198,7 @@ export default function HostOnboardingPage() {
                       }}
                       onDrop={onIdBackDrop}
                       className={`relative w-full cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${
-                        apiFieldErrors.representativeBack
+                        step3Msg("representativeBack")
                           ? "border-red-500 bg-red-50/40"
                           : idBackPreviewUrl
                             ? "border-slate-200 bg-slate-100/90"
@@ -1092,8 +1225,8 @@ export default function HostOnboardingPage() {
                         {idBackFileLabel}
                       </p>
                     ) : null}
-                    {apiFieldErrors.representativeBack ? (
-                      <p className="text-xs font-medium text-red-600">{apiFieldErrors.representativeBack}</p>
+                    {step3Msg("representativeBack") ? (
+                      <p className="text-xs font-medium text-red-600">{step3Msg("representativeBack")}</p>
                     ) : null}
                   </div>
                 </div>

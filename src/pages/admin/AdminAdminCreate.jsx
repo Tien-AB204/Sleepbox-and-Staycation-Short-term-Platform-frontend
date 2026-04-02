@@ -1,13 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AdminErrorAlert, AdminPage, AdminPageHeader, AdminSection } from "../../components/admin/AdminPageChrome";
+import { adminBtnPrimary, adminBtnSecondary, adminInput, adminSelect } from "../../components/admin/adminUi";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { adminApiError, adminRegisterAdmin } from "../../services/adminService";
 
 const GENDERS = [
-  { value: "", label: "Chọn giới tính" },
-  { value: "Male", label: "Nam" },
-  { value: "Female", label: "Nữ" },
-  { value: "Other", label: "Khác" },
+  { value: "", label: "Select gender" },
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" },
+  { value: "Other", label: "Other" },
 ];
 
 function isStrongPassword(value) {
@@ -61,19 +63,19 @@ export default function AdminAdminCreate() {
     const username = form.username.trim().toLowerCase();
     const email = form.email.trim().toLowerCase();
 
-    if (!form.firstName.trim()) next.firstName = "Vui lòng nhập tên.";
-    if (!form.lastName.trim()) next.lastName = "Vui lòng nhập họ / đệm.";
-    if (!username) next.username = "Vui lòng nhập username.";
-    else if (!/^[a-z0-9._-]{4,50}$/.test(username)) next.username = "Username không hợp lệ.";
-    if (!email) next.email = "Vui lòng nhập email.";
-    else if (!isValidEmail(email)) next.email = "Email không hợp lệ.";
-    if (!form.phone.trim()) next.phone = "Cần số điện thoại.";
-    else if (!/^[0-9]{9,15}$/.test(form.phone.replace(/\s/g, ""))) next.phone = "SĐT không hợp lệ.";
-    if (!form.birthDate) next.birthDate = "Chọn ngày sinh.";
-    if (!form.gender) next.gender = "Chọn giới tính.";
-    if (!form.password) next.password = "Nhập mật khẩu.";
-    else if (!isStrongPassword(form.password)) next.password = "Mật khẩu chưa đủ mạnh.";
-    if (form.confirmPassword !== form.password) next.confirmPassword = "Mật khẩu xác nhận không khớp.";
+    if (!form.firstName.trim()) next.firstName = "Please enter first name.";
+    if (!form.lastName.trim()) next.lastName = "Please enter last name.";
+    if (!username) next.username = "Please enter username.";
+    else if (!/^[a-z0-9._-]{4,50}$/.test(username)) next.username = "Invalid username.";
+    if (!email) next.email = "Please enter email.";
+    else if (!isValidEmail(email)) next.email = "Invalid email.";
+    if (!form.phone.trim()) next.phone = "Phone number is required.";
+    else if (!/^[0-9]{9,15}$/.test(form.phone.replace(/\s/g, ""))) next.phone = "Invalid phone number.";
+    if (!form.birthDate) next.birthDate = "Please select date of birth.";
+    if (!form.gender) next.gender = "Please select gender.";
+    if (!form.password) next.password = "Enter a password.";
+    else if (!isStrongPassword(form.password)) next.password = "Password is not strong enough.";
+    if (form.confirmPassword !== form.password) next.confirmPassword = "Passwords do not match.";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -83,7 +85,7 @@ export default function AdminAdminCreate() {
     setApiError("");
     if (!validate()) return;
     if (!token) {
-      setApiError("Chưa đăng nhập.");
+      setApiError("Not signed in.");
       return;
     }
     const body = {
@@ -101,50 +103,44 @@ export default function AdminAdminCreate() {
       await adminRegisterAdmin(token, body);
       navigate("/admin/users");
     } catch (err) {
-      setApiError(adminApiError(err, "Đăng ký admin thất bại."));
+      setApiError(adminApiError(err, "Failed to register admin."));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="flex-1 overflow-y-auto p-8">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-primary">Tạo tài khoản Admin</h2>
-          <p className="text-sm text-slate-500">POST /api/Admin/Register</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate("/admin/moderators")}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-        >
-          Quay lại
-        </button>
-      </header>
+    <AdminPage narrow>
+      <AdminPageHeader
+        title="Create admin account"
+        description="Grant full admin access to a new team member."
+        actions={
+          <button type="button" onClick={() => navigate("/admin/moderators")} className={adminBtnSecondary}>
+            Back
+          </button>
+        }
+      />
 
-      {apiError ? (
-        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{apiError}</div>
-      ) : null}
+      <AdminErrorAlert>{apiError}</AdminErrorAlert>
 
       <form onSubmit={onSubmit} className="max-w-3xl space-y-6">
-        <section className="rounded-xl border border-primary/10 bg-white p-6 shadow-sm">
+        <AdminSection title="Profile">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Tên</span>
+              <span className="text-sm font-semibold text-slate-700">First name</span>
               <input
                 value={form.firstName}
                 onChange={(e) => updateField("firstName", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${adminInput} mt-1.5`}
               />
               {errors.firstName ? <p className="mt-1 text-xs text-rose-600">{errors.firstName}</p> : null}
             </label>
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Họ & đệm</span>
+              <span className="text-sm font-semibold text-slate-700">Last name</span>
               <input
                 value={form.lastName}
                 onChange={(e) => updateField("lastName", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${adminInput} mt-1.5`}
               />
               {errors.lastName ? <p className="mt-1 text-xs text-rose-600">{errors.lastName}</p> : null}
             </label>
@@ -153,7 +149,7 @@ export default function AdminAdminCreate() {
               <input
                 value={form.username}
                 onChange={(e) => updateField("username", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${adminInput} mt-1.5`}
               />
               {errors.username ? <p className="mt-1 text-xs text-rose-600">{errors.username}</p> : null}
             </label>
@@ -163,35 +159,35 @@ export default function AdminAdminCreate() {
                 type="email"
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${adminInput} mt-1.5`}
               />
               {errors.email ? <p className="mt-1 text-xs text-rose-600">{errors.email}</p> : null}
             </label>
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Điện thoại</span>
+              <span className="text-sm font-semibold text-slate-700">Phone</span>
               <input
                 value={form.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${adminInput} mt-1.5`}
               />
               {errors.phone ? <p className="mt-1 text-xs text-rose-600">{errors.phone}</p> : null}
             </label>
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Ngày sinh</span>
+              <span className="text-sm font-semibold text-slate-700">Date of birth</span>
               <input
                 type="date"
                 value={form.birthDate}
                 onChange={(e) => updateField("birthDate", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${adminInput} mt-1.5`}
               />
               {errors.birthDate ? <p className="mt-1 text-xs text-rose-600">{errors.birthDate}</p> : null}
             </label>
             <label className="block md:col-span-2">
-              <span className="text-sm font-semibold text-slate-700">Giới tính</span>
+              <span className="text-sm font-semibold text-slate-700">Gender</span>
               <select
                 value={form.gender}
                 onChange={(e) => updateField("gender", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${adminSelect} mt-1.5`}
               >
                 {GENDERS.map((g) => (
                   <option key={g.value || "x"} value={g.value}>
@@ -202,49 +198,45 @@ export default function AdminAdminCreate() {
               {errors.gender ? <p className="mt-1 text-xs text-rose-600">{errors.gender}</p> : null}
             </label>
           </div>
-        </section>
+        </AdminSection>
 
-        <section className="rounded-xl border border-primary/10 bg-white p-6 shadow-sm">
+        <AdminSection title="Password">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Mật khẩu</span>
+              <span className="text-sm font-semibold text-slate-700">Password</span>
               <input
                 type="password"
                 value={form.password}
                 onChange={(e) => updateField("password", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${adminInput} mt-1.5`}
               />
               {errors.password ? <p className="mt-1 text-xs text-rose-600">{errors.password}</p> : null}
             </label>
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Xác nhận</span>
+              <span className="text-sm font-semibold text-slate-700">Confirm</span>
               <input
                 type="password"
                 value={form.confirmPassword}
                 onChange={(e) => updateField("confirmPassword", e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                className={`${adminInput} mt-1.5`}
               />
               {errors.confirmPassword ? <p className="mt-1 text-xs text-rose-600">{errors.confirmPassword}</p> : null}
             </label>
           </div>
           <ul className="mt-3 space-y-1 text-xs text-slate-500">
-            <li className={passwordRules.length ? "text-emerald-600" : ""}>≥ 8 ký tự</li>
-            <li className={passwordRules.upper ? "text-emerald-600" : ""}>Chữ hoa</li>
-            <li className={passwordRules.lower ? "text-emerald-600" : ""}>Chữ thường</li>
-            <li className={passwordRules.number ? "text-emerald-600" : ""}>Chữ số</li>
+            <li className={passwordRules.length ? "text-emerald-600" : ""}>≥ 8 characters</li>
+            <li className={passwordRules.upper ? "text-emerald-600" : ""}>Uppercase letter</li>
+            <li className={passwordRules.lower ? "text-emerald-600" : ""}>Lowercase letter</li>
+            <li className={passwordRules.number ? "text-emerald-600" : ""}>Digit</li>
           </ul>
-        </section>
+        </AdminSection>
 
         <div className="flex justify-end gap-2">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
-          >
-            {isSubmitting ? "Đang tạo…" : "Tạo admin"}
+          <button type="submit" disabled={isSubmitting} className={adminBtnPrimary}>
+            {isSubmitting ? "Creating…" : "Create admin"}
           </button>
         </div>
       </form>
-    </main>
+    </AdminPage>
   );
 }

@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { AdminErrorAlert, AdminPage, AdminPageHeader, AdminSection } from "../../components/admin/AdminPageChrome";
+import { adminBtnPrimary, adminBtnSecondary, adminInput, adminSelect, adminTableWrap, adminThead } from "../../components/admin/adminUi";
 import { useAuthContext } from "../../contexts/AuthContext";
 import {
   adminApiError,
@@ -43,7 +45,7 @@ export default function AdminAddonServices() {
 
   const load = useCallback(async () => {
     if (!token) {
-      setError("Chưa đăng nhập.");
+      setError("Not signed in.");
       setLoading(false);
       return;
     }
@@ -56,7 +58,7 @@ export default function AdminAddonServices() {
       const { data } = await adminGetAddonServices(token, params);
       setRows(asList(data));
     } catch (e) {
-      setError(adminApiError(e, "Không tải được dịch vụ add-on."));
+      setError(adminApiError(e, "Could not load add-on services."));
       setRows([]);
     } finally {
       setLoading(false);
@@ -78,7 +80,7 @@ export default function AdminAddonServices() {
       setDescription("");
       await load();
     } catch (e2) {
-      setError(adminApiError(e2, "Tạo thất bại."));
+      setError(adminApiError(e2, "Create failed."));
     }
   };
 
@@ -101,7 +103,7 @@ export default function AdminAddonServices() {
       setEditId(null);
       await load();
     } catch (e2) {
-      setError(adminApiError(e2, "Cập nhật thất bại."));
+      setError(adminApiError(e2, "Update failed."));
     }
   };
 
@@ -112,93 +114,86 @@ export default function AdminAddonServices() {
       await adminToggleAddonService(token, id);
       await load();
     } catch (e2) {
-      setError(adminApiError(e2, "Toggle thất bại."));
+      setError(adminApiError(e2, "Toggle failed."));
     }
   };
 
   const onDelete = async (id) => {
-    if (!token || !window.confirm("Xóa dịch vụ này?")) return;
+    if (!token || !window.confirm("Delete this service?")) return;
     setError("");
     try {
       await adminDeleteAddonService(token, id);
       await load();
     } catch (e2) {
-      setError(adminApiError(e2, "Xóa thất bại."));
+      setError(adminApiError(e2, "Delete failed."));
     }
   };
 
   return (
-    <main className="flex-1 overflow-y-auto p-8">
-      <header className="mb-6">
-        <h2 className="text-2xl font-extrabold text-slate-900">Dịch vụ add-on</h2>
-        <p className="text-sm text-slate-500">/api/admin/pricing/addon-services</p>
-      </header>
+    <AdminPage>
+      <AdminPageHeader
+        title="Add-on services"
+        description="Optional extras guests can add to a booking."
+      />
 
-      {error ? (
-        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>
-      ) : null}
+      <AdminErrorAlert>{error}</AdminErrorAlert>
 
-      <div className="mb-4 flex flex-wrap gap-3">
-        <select
-          value={activeOnly}
-          onChange={(e) => setActiveOnly(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
-        >
-          <option value="">Tất cả trạng thái</option>
-          <option value="true">Chỉ đang bật</option>
-          <option value="false">Chỉ đang tắt</option>
+      <div className="mb-6 flex flex-wrap items-end gap-3">
+        <select value={activeOnly} onChange={(e) => setActiveOnly(e.target.value)} className={`${adminSelect} w-full min-w-[200px] sm:w-auto`}>
+          <option value="">All</option>
+          <option value="true">Enabled only</option>
+          <option value="false">Disabled only</option>
         </select>
-        <button type="button" onClick={() => load()} className="rounded-lg border border-slate-200 px-4 py-2 text-sm">
-          Làm mới
+        <button type="button" onClick={() => load()} className={adminBtnSecondary}>
+          Refresh
         </button>
       </div>
 
-      <form
-        onSubmit={onCreate}
-        className="mb-6 grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-4"
-      >
-        <input
-          required
-          placeholder="Tên dịch vụ *"
-          value={serviceName}
-          onChange={(e) => setServiceName(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm"
-        />
-        <input placeholder="Đơn vị" value={unit} onChange={(e) => setUnit(e.target.value)} className="rounded-lg border px-3 py-2 text-sm" />
-        <input
-          placeholder="Mô tả"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="rounded-lg border px-3 py-2 text-sm md:col-span-2"
-        />
-        <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white md:col-span-4">
-          Tạo mới
-        </button>
-      </form>
+      <AdminSection title="New service" className="mb-6">
+        <form onSubmit={onCreate} className="grid grid-cols-1 gap-3 md:grid-cols-4">
+          <input
+            required
+            placeholder="Service name *"
+            value={serviceName}
+            onChange={(e) => setServiceName(e.target.value)}
+            className={adminInput}
+          />
+          <input placeholder="Unit" value={unit} onChange={(e) => setUnit(e.target.value)} className={adminInput} />
+          <input
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className={`${adminInput} md:col-span-2`}
+          />
+          <button type="submit" className={`${adminBtnPrimary} md:col-span-4 w-full md:w-auto`}>
+            Create
+          </button>
+        </form>
+      </AdminSection>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className={adminTableWrap}>
         <table className="min-w-full text-left text-sm">
-          <thead className="border-b bg-slate-50 text-xs font-bold uppercase text-slate-500">
+          <thead className={adminThead}>
             <tr>
-              <th className="px-3 py-2">ID</th>
-              <th className="px-3 py-2">Tên</th>
-              <th className="px-3 py-2">Đơn vị</th>
-              <th className="px-3 py-2">Mô tả</th>
-              <th className="px-3 py-2">Active</th>
-              <th className="px-3 py-2 text-right">Tác vụ</th>
+              <th className="px-6 py-3">ID</th>
+              <th className="px-6 py-3">Name</th>
+              <th className="px-6 py-3">Unit</th>
+              <th className="px-6 py-3">Description</th>
+              <th className="px-6 py-3">Enabled</th>
+              <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center">
-                  Đang tải…
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  Loading…
                 </td>
               </tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-slate-500">
-                  Không có dữ liệu.
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  No data.
                 </td>
               </tr>
             ) : (
@@ -207,50 +202,50 @@ export default function AdminAddonServices() {
                 const active = row?.isActive ?? row?.IsActive;
                 const editing = editId && String(editId) === String(id);
                 return (
-                  <tr key={id} className="border-b border-slate-100">
-                    <td className="px-3 py-2 font-mono text-xs">{String(id).slice(0, 8)}…</td>
-                    <td className="px-3 py-2">
+                  <tr key={id} className="border-b border-slate-50 hover:bg-slate-50/80">
+                    <td className="px-6 py-4 font-mono text-xs text-slate-500">{String(id).slice(0, 8)}…</td>
+                    <td className="px-6 py-4">
                       {editing ? (
-                        <input value={eName} onChange={(e) => setEName(e.target.value)} className="w-full rounded border px-2 py-1 text-sm" />
+                        <input value={eName} onChange={(e) => setEName(e.target.value)} className={adminInput} />
                       ) : (
                         sf(row, "serviceName", "ServiceName")
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-6 py-4">
                       {editing ? (
-                        <input value={eUnit} onChange={(e) => setEUnit(e.target.value)} className="w-full rounded border px-2 py-1 text-sm" />
+                        <input value={eUnit} onChange={(e) => setEUnit(e.target.value)} className={adminInput} />
                       ) : (
                         sf(row, "unit", "Unit")
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-6 py-4">
                       {editing ? (
-                        <input value={eDesc} onChange={(e) => setEDesc(e.target.value)} className="w-full rounded border px-2 py-1 text-sm" />
+                        <input value={eDesc} onChange={(e) => setEDesc(e.target.value)} className={adminInput} />
                       ) : (
                         sf(row, "description", "Description")
                       )}
                     </td>
-                    <td className="px-3 py-2">{active == null ? "—" : active ? "Có" : "Không"}</td>
-                    <td className="px-3 py-2 text-right text-xs">
+                    <td className="px-6 py-4 text-slate-700">{active == null ? "—" : active ? "On" : "Off"}</td>
+                    <td className="px-6 py-4 text-right text-xs">
                       {editing ? (
                         <>
                           <button type="button" className="font-bold text-primary" onClick={saveEdit}>
-                            Lưu
+                            Save
                           </button>
                           <button type="button" className="ml-2 text-slate-500" onClick={() => setEditId(null)}>
-                            Hủy
+                            Cancel
                           </button>
                         </>
                       ) : (
                         <>
                           <button type="button" className="font-bold text-primary" onClick={() => startEdit(row)}>
-                            Sửa
+                            Edit
                           </button>
                           <button type="button" className="ml-2 font-bold text-slate-600" onClick={() => onToggle(id)}>
-                            Bật/tắt
+                            On/off
                           </button>
                           <button type="button" className="ml-2 font-bold text-rose-600" onClick={() => onDelete(id)}>
-                            Xóa
+                            Delete
                           </button>
                         </>
                       )}
@@ -262,6 +257,6 @@ export default function AdminAddonServices() {
           </tbody>
         </table>
       </div>
-    </main>
+    </AdminPage>
   );
 }

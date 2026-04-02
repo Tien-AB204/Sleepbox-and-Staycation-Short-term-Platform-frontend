@@ -139,8 +139,16 @@ export const extractHostRegisterFieldErrors = (err) => {
   return Object.keys(out).length ? out : null;
 };
 
+/** Thời gian chờ riêng cho OTP đăng ký host (Render cold start / SMTP thường > 15s). */
+const HOST_REGISTER_OTP_TIMEOUT_MS = 60000;
+
 /** Bắt lỗi ASP.NET / Swagger (message, title, detail, errors{}). */
 export const getApiErrorMessage = (err, fallback) => {
+  const rawMsg = typeof err?.message === "string" ? err.message : "";
+  if (err?.code === "ECONNABORTED" || /timeout/i.test(rawMsg)) {
+    return "Hết thời gian chờ máy chủ. Backend trên Render lần đầu có thể khởi động 30–60 giây; gửi OTP cũng chậm nếu SMTP chưa cấu hình. Hãy thử lại.";
+  }
+
   const status = err.response?.status;
   const d = err.response?.data;
 
@@ -173,8 +181,6 @@ export const getApiErrorMessage = (err, fallback) => {
   return fallback;
 };
 
-const HOST_REGISTER_OTP_PURPOSE = "HOST_REGISTER";
-
 const decodeJwtPayload = (jwt) => {
   try {
     const parts = String(jwt).split(".");
@@ -200,7 +206,7 @@ const draftIdFromRegisterToken = (token) => {
   return payload.draft_id ?? payload.draftId;
 };
 
-/** API `/otp/verify` có thể không trả `draftId` — lấy từ `sub` trong JWT. Chuẩn hóa PascalCase. */
+/** Phản hồi send-otp / verify-otp / resend-otp — chuẩn hóa `draftId`/`token` (PascalCase + JWT `sub`). */
 const unwrapHostRegisterResponse = (data) => {
   if (!data || typeof data !== "object") return {};
   const tokenRaw = data.token ?? data.Token;
@@ -225,37 +231,30 @@ const draftTokenRequestOptions = (token) => {
   };
 };
 
+/** `POST /api/host/register/send-otp` — body: `{ email }` (SendHostRegisterOtpRequest). */
 export const sendHostRegisterOtp = async (email) => {
   try {
-    const res = await axios.post("/otp/send", {
-      email,
-      purpose: HOST_REGISTER_OTP_PURPOSE,
-    });
+    const res = await axios.post("/host/register/send-otp", { email }, { timeout: HOST_REGISTER_OTP_TIMEOUT_MS });
     return unwrapHostRegisterResponse(res.data);
   } catch (err) {
     throw getApiErrorMessage(err, "Gửi OTP đăng ký host thất bại");
   }
 };
 
+/** `POST /api/verify-otp` — body: `{ email, otpCode }` (VerifyOtpRequest) → VerifyOtpResponse. */
 export const verifyHostRegisterOtp = async ({ email, otpCode }) => {
   try {
-    const res = await axios.post("/otp/verify", {
-      email,
-      otpCode,
-      purpose: HOST_REGISTER_OTP_PURPOSE,
-    });
+    const res = await axios.post("/verify-otp", { email, otpCode }, { timeout: HOST_REGISTER_OTP_TIMEOUT_MS });
     return unwrapHostRegisterResponse(res.data);
   } catch (err) {
     throw getApiErrorMessage(err, "Xác thực OTP thất bại");
   }
 };
 
+/** `POST /api/resend-otp` — body: `{ email }` (ResendOtpRequest). */
 export const resendHostRegisterOtp = async (email) => {
   try {
-    const res = await axios.post("/otp/resend", {
-      email,
-      purpose: HOST_REGISTER_OTP_PURPOSE,
-    });
+    const res = await axios.post("/resend-otp", { email }, { timeout: HOST_REGISTER_OTP_TIMEOUT_MS });
     return unwrapHostRegisterResponse(res.data);
   } catch (err) {
     throw getApiErrorMessage(err, "Gửi lại OTP thất bại");

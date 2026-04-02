@@ -1,4 +1,14 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { AdminErrorAlert, AdminPage, AdminPageHeader, AdminSection } from "../../components/admin/AdminPageChrome";
+import {
+  adminBtnPrimary,
+  adminBtnSecondary,
+  adminInput,
+  adminSelect,
+  adminTableFooter,
+  adminTableWrap,
+  adminThead,
+} from "../../components/admin/adminUi";
 import { useAuthContext } from "../../contexts/AuthContext";
 import {
   adminApiError,
@@ -23,6 +33,16 @@ function normalizeRules(data) {
 
 function ruleId(row) {
   return row?.ruleId ?? row?.RuleId ?? row?.id ?? row?.Id;
+}
+
+const PRICING_MODE_DISPLAY = {
+  HOURLY: "Hourly",
+  OVERNIGHT: "Overnight",
+};
+
+function displayPricingMode(mode) {
+  if (!mode) return "—";
+  return PRICING_MODE_DISPLAY[mode] ?? "—";
 }
 
 export default function AdminSystemPriceRules() {
@@ -56,7 +76,7 @@ export default function AdminSystemPriceRules() {
 
   const load = useCallback(async () => {
     if (!token) {
-      setError("Chưa đăng nhập.");
+      setError("Not signed in.");
       setLoading(false);
       return;
     }
@@ -70,7 +90,7 @@ export default function AdminSystemPriceRules() {
       const { data } = await adminGetSystemPriceRules(token, params);
       setPaged(normalizeRules(data));
     } catch (e) {
-      setError(adminApiError(e, "Không tải được quy tắc giá."));
+      setError(adminApiError(e, "Could not load price rules."));
       setPaged({ items: [], totalPages: 0, totalCount: 0 });
     } finally {
       setLoading(false);
@@ -102,7 +122,7 @@ export default function AdminSystemPriceRules() {
       setMaxPrice("");
       await load();
     } catch (e2) {
-      setError(adminApiError(e2, "Tạo quy tắc thất bại."));
+      setError(adminApiError(e2, "Failed to create rule."));
     }
   };
 
@@ -132,87 +152,96 @@ export default function AdminSystemPriceRules() {
       setEditId(null);
       await load();
     } catch (e2) {
-      setError(adminApiError(e2, "Cập nhật thất bại."));
+      setError(adminApiError(e2, "Update failed."));
     }
   };
 
   return (
-    <main className="flex-1 overflow-y-auto p-8">
-      <header className="mb-6">
-        <h2 className="text-2xl font-extrabold text-slate-900">Quy tắc giá hệ thống</h2>
-        <p className="text-sm text-slate-500">/api/admin/pricing/system-price-rules</p>
-      </header>
+    <AdminPage>
+      <AdminPageHeader
+        title="System price rules"
+        description="Define how minimum, maximum, and priority apply across booking modes."
+      />
 
-      {error ? (
-        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>
-      ) : null}
+      <AdminErrorAlert>{error}</AdminErrorAlert>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <select value={mode} onChange={(e) => { setMode(e.target.value); setPageNumber(1); }} className="rounded-lg border px-2 py-2 text-sm">
-          <option value="">Mọi mode</option>
-          <option value="HOURLY">HOURLY</option>
-          <option value="OVERNIGHT">OVERNIGHT</option>
+      <div className="mb-6 flex flex-wrap items-end gap-3">
+        <select
+          value={mode}
+          onChange={(e) => {
+            setMode(e.target.value);
+            setPageNumber(1);
+          }}
+          className={`${adminSelect} w-full min-w-[180px] sm:w-auto`}
+        >
+          <option value="">All booking modes</option>
+          <option value="HOURLY">{PRICING_MODE_DISPLAY.HOURLY}</option>
+          <option value="OVERNIGHT">{PRICING_MODE_DISPLAY.OVERNIGHT}</option>
         </select>
         <select
           value={activeFilter}
-          onChange={(e) => { setActiveFilter(e.target.value); setPageNumber(1); }}
-          className="rounded-lg border px-2 py-2 text-sm"
+          onChange={(e) => {
+            setActiveFilter(e.target.value);
+            setPageNumber(1);
+          }}
+          className={`${adminSelect} w-full min-w-[160px] sm:w-auto`}
         >
-          <option value="">isActive: tất cả</option>
-          <option value="true">Chỉ active</option>
-          <option value="false">Chỉ inactive</option>
+          <option value="">All rules</option>
+          <option value="true">Enabled only</option>
+          <option value="false">Disabled only</option>
         </select>
-        <button type="button" onClick={() => load()} className="rounded-lg border px-4 py-2 text-sm">
-          Làm mới
+        <button type="button" onClick={() => load()} className={adminBtnSecondary}>
+          Refresh
         </button>
       </div>
 
-      <form onSubmit={onCreate} className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h3 className="mb-3 font-bold text-slate-900">Tạo quy tắc</h3>
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-          <select value={createMode} onChange={(e) => setCreateMode(e.target.value)} className="rounded border px-2 py-2 text-sm">
-            <option value="HOURLY">HOURLY</option>
-            <option value="OVERNIGHT">OVERNIGHT</option>
-          </select>
-          <input placeholder="minHours" value={minHours} onChange={(e) => setMinHours(e.target.value)} className="rounded border px-2 py-2 text-sm" />
-          <input placeholder="maxHours" value={maxHours} onChange={(e) => setMaxHours(e.target.value)} className="rounded border px-2 py-2 text-sm" />
-          <input placeholder="minPrice" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} className="rounded border px-2 py-2 text-sm" />
-          <input placeholder="maxPrice" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} className="rounded border px-2 py-2 text-sm" />
-          <input placeholder="priority" value={priority} onChange={(e) => setPriority(e.target.value)} className="rounded border px-2 py-2 text-sm" />
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            isActive
-          </label>
-          <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white">
-            Tạo
-          </button>
-        </div>
-      </form>
+      <AdminSection title="Create rule" className="mb-6">
+        <form onSubmit={onCreate}>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <select value={createMode} onChange={(e) => setCreateMode(e.target.value)} className={adminSelect}>
+              <option value="HOURLY">{PRICING_MODE_DISPLAY.HOURLY}</option>
+              <option value="OVERNIGHT">{PRICING_MODE_DISPLAY.OVERNIGHT}</option>
+            </select>
+            <input placeholder="Min hours" value={minHours} onChange={(e) => setMinHours(e.target.value)} className={adminInput} />
+            <input placeholder="Max hours" value={maxHours} onChange={(e) => setMaxHours(e.target.value)} className={adminInput} />
+            <input placeholder="Min price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} className={adminInput} />
+            <input placeholder="Max price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} className={adminInput} />
+            <input placeholder="Priority" value={priority} onChange={(e) => setPriority(e.target.value)} className={adminInput} />
+            <label className="flex h-10 items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-slate-300" />
+              Rule enabled
+            </label>
+            <button type="submit" className={`${adminBtnPrimary} w-full sm:w-auto`}>
+              Create
+            </button>
+          </div>
+        </form>
+      </AdminSection>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className={adminTableWrap}>
         <table className="min-w-full text-left text-sm">
-          <thead className="border-b bg-slate-50 text-xs font-bold uppercase text-slate-500">
+          <thead className={adminThead}>
             <tr>
-              <th className="px-3 py-2">Rule</th>
-              <th className="px-3 py-2">Mode</th>
-              <th className="px-3 py-2">Giờ</th>
-              <th className="px-3 py-2">Giá</th>
-              <th className="px-3 py-2">Ưu tiên</th>
-              <th className="px-3 py-2">Active</th>
-              <th className="px-3 py-2 text-right">Tác vụ</th>
+              <th className="px-6 py-3">Rule</th>
+              <th className="px-6 py-3">Booking mode</th>
+              <th className="px-6 py-3">Hours</th>
+              <th className="px-6 py-3">Price</th>
+              <th className="px-6 py-3">Priority</th>
+              <th className="px-6 py-3">Enabled</th>
+              <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center">
-                  Đang tải…
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  Loading…
                 </td>
               </tr>
             ) : paged.items.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-500">
-                  Không có quy tắc.
+                <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  No rules.
                 </td>
               </tr>
             ) : (
@@ -221,59 +250,59 @@ export default function AdminSystemPriceRules() {
                 const editing = editId && String(editId) === String(id);
                 const pm = row.pricingMode ?? row.PricingMode;
                 return (
-                  <tr key={id} className="border-b border-slate-100">
-                    <td className="px-3 py-2 font-mono text-xs">{String(id).slice(0, 8)}…</td>
-                    <td className="px-3 py-2">{pm}</td>
-                    <td className="px-3 py-2">
+                  <tr key={id} className="border-b border-slate-50 hover:bg-slate-50/80">
+                    <td className="px-6 py-4 font-mono text-xs text-slate-500">{String(id).slice(0, 8)}…</td>
+                    <td className="px-6 py-4">{displayPricingMode(pm)}</td>
+                    <td className="px-6 py-4">
                       {editing ? (
                         <span className="flex gap-1">
-                          <input value={eMinH} onChange={(e) => setEMinH(e.target.value)} className="w-12 rounded border text-xs" />
-                          <input value={eMaxH} onChange={(e) => setEMaxH(e.target.value)} className="w-12 rounded border text-xs" />
+                          <input value={eMinH} onChange={(e) => setEMinH(e.target.value)} className="w-14 rounded-lg border border-slate-200 px-1 py-1 text-xs" />
+                          <input value={eMaxH} onChange={(e) => setEMaxH(e.target.value)} className="w-14 rounded-lg border border-slate-200 px-1 py-1 text-xs" />
                         </span>
                       ) : (
                         `${row.minHours ?? row.MinHours ?? "—"} – ${row.maxHours ?? row.MaxHours ?? "—"}`
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-6 py-4">
                       {editing ? (
                         <span className="flex gap-1">
-                          <input value={eMinP} onChange={(e) => setEMinP(e.target.value)} className="w-16 rounded border text-xs" />
-                          <input value={eMaxP} onChange={(e) => setEMaxP(e.target.value)} className="w-16 rounded border text-xs" />
+                          <input value={eMinP} onChange={(e) => setEMinP(e.target.value)} className="w-20 rounded-lg border border-slate-200 px-1 py-1 text-xs" />
+                          <input value={eMaxP} onChange={(e) => setEMaxP(e.target.value)} className="w-20 rounded-lg border border-slate-200 px-1 py-1 text-xs" />
                         </span>
                       ) : (
                         `${row.minPrice ?? row.MinPrice ?? "—"} – ${row.maxPrice ?? row.MaxPrice ?? "—"}`
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-6 py-4">
                       {editing ? (
-                        <input value={ePri} onChange={(e) => setEPri(e.target.value)} className="w-14 rounded border text-xs" />
+                        <input value={ePri} onChange={(e) => setEPri(e.target.value)} className="w-16 rounded-lg border border-slate-200 px-1 py-1 text-xs" />
                       ) : (
                         row.priority ?? row.Priority
                       )}
                     </td>
-                    <td className="px-3 py-2">
+                    <td className="px-6 py-4">
                       {editing ? (
                         <input type="checkbox" checked={eAct} onChange={(e) => setEAct(e.target.checked)} />
                       ) : row.isActive ?? row.IsActive ? (
-                        "Có"
+                        "On"
                       ) : (
-                        "Không"
+                        "Off"
                       )}
                     </td>
-                    <td className="px-3 py-2 text-right text-xs">
+                    <td className="px-6 py-4 text-right text-xs">
                       {editing ? (
                         <>
                           <button type="button" className="font-bold text-primary" onClick={saveEdit}>
-                            Lưu
+                            Save
                           </button>
                           <button type="button" className="ml-2" onClick={() => setEditId(null)}>
-                            Hủy
+                            Cancel
                           </button>
                         </>
                       ) : (
                         <>
                           <button type="button" className="font-bold text-primary" onClick={() => startEdit(row)}>
-                            Sửa
+                            Edit
                           </button>
                           <button
                             type="button"
@@ -284,7 +313,7 @@ export default function AdminSystemPriceRules() {
                                 await adminToggleSystemPriceRule(token, id);
                                 await load();
                               } catch (e2) {
-                                setError(adminApiError(e2, "Toggle thất bại."));
+                                setError(adminApiError(e2, "Toggle failed."));
                               }
                             }}
                           >
@@ -294,16 +323,16 @@ export default function AdminSystemPriceRules() {
                             type="button"
                             className="ml-2 font-bold text-rose-600"
                             onClick={async () => {
-                              if (!window.confirm("Xóa rule?")) return;
+                              if (!window.confirm("Delete this rule?")) return;
                               try {
                                 await adminDeleteSystemPriceRule(token, id);
                                 await load();
                               } catch (e2) {
-                                setError(adminApiError(e2, "Xóa thất bại."));
+                                setError(adminApiError(e2, "Delete failed."));
                               }
                             }}
                           >
-                            Xóa
+                            Delete
                           </button>
                         </>
                       )}
@@ -314,31 +343,30 @@ export default function AdminSystemPriceRules() {
             )}
           </tbody>
         </table>
+        <div className={adminTableFooter}>
+          <span className="text-sm text-slate-600">
+            {paged.totalCount} rules — page {pageNumber} / {Math.max(1, paged.totalPages)}
+          </span>
+          <span className="flex gap-2">
+            <button
+              type="button"
+              disabled={pageNumber <= 1}
+              onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+              className={adminBtnSecondary}
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              disabled={pageNumber >= paged.totalPages}
+              onClick={() => setPageNumber((p) => p + 1)}
+              className={adminBtnSecondary}
+            >
+              Next
+            </button>
+          </span>
+        </div>
       </div>
-
-      <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-        <span>
-          {paged.totalCount} quy tắc — trang {pageNumber} / {Math.max(1, paged.totalPages)}
-        </span>
-        <span className="flex gap-2">
-          <button
-            type="button"
-            disabled={pageNumber <= 1}
-            onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
-            className="rounded border px-3 py-1 disabled:opacity-40"
-          >
-            Trước
-          </button>
-          <button
-            type="button"
-            disabled={pageNumber >= paged.totalPages}
-            onClick={() => setPageNumber((p) => p + 1)}
-            className="rounded border px-3 py-1 disabled:opacity-40"
-          >
-            Sau
-          </button>
-        </span>
-      </div>
-    </main>
+    </AdminPage>
   );
 }

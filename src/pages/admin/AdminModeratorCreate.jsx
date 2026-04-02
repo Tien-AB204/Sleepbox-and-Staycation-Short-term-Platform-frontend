@@ -1,13 +1,22 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AdminErrorAlert, AdminPage, AdminPageHeader, AdminSection } from "../../components/admin/AdminPageChrome";
+import {
+  adminBtnPrimary,
+  adminBtnSecondary,
+  adminCard,
+  adminInput,
+  adminLabel as adminLabelClass,
+  adminSelect,
+} from "../../components/admin/adminUi";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { adminApiError, adminRegisterModerator } from "../../services/adminService";
 
 const GENDERS = [
-  { value: "", label: "Chọn giới tính" },
-  { value: "Male", label: "Nam" },
-  { value: "Female", label: "Nữ" },
-  { value: "Other", label: "Khác" },
+  { value: "", label: "Select gender" },
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" },
+  { value: "Other", label: "Other" },
 ];
 
 function isStrongPassword(value) {
@@ -63,29 +72,29 @@ export default function AdminModeratorCreate() {
     const username = form.username.trim().toLowerCase();
     const email = form.email.trim().toLowerCase();
 
-    if (!form.firstName.trim()) next.firstName = "Vui lòng nhập tên.";
-    if (!form.lastName.trim()) next.lastName = "Vui lòng nhập họ / tên đệm.";
+    if (!form.firstName.trim()) next.firstName = "Please enter first name.";
+    if (!form.lastName.trim()) next.lastName = "Please enter last name.";
 
-    if (!username) next.username = "Vui lòng nhập username.";
+    if (!username) next.username = "Please enter username.";
     else if (!/^[a-z0-9._-]{4,50}$/.test(username)) {
-      next.username = "Username: chữ thường, số, . _ - và 4–50 ký tự.";
+      next.username = "Username: lowercase letters, digits, . _ - and 4–50 characters.";
     }
 
-    if (!email) next.email = "Vui lòng nhập email.";
-    else if (!isValidEmail(email)) next.email = "Email không hợp lệ.";
+    if (!email) next.email = "Please enter email.";
+    else if (!isValidEmail(email)) next.email = "Invalid email.";
 
-    if (!form.phone.trim()) next.phone = "Vui lòng nhập số điện thoại.";
-    else if (!/^[0-9]{9,15}$/.test(form.phone.replace(/\s/g, ""))) next.phone = "Số điện thoại không hợp lệ.";
+    if (!form.phone.trim()) next.phone = "Please enter phone number.";
+    else if (!/^[0-9]{9,15}$/.test(form.phone.replace(/\s/g, ""))) next.phone = "Invalid phone number.";
 
-    if (!form.birthDate) next.birthDate = "Chọn ngày sinh.";
-    if (!form.gender) next.gender = "Chọn giới tính.";
+    if (!form.birthDate) next.birthDate = "Please select date of birth.";
+    if (!form.gender) next.gender = "Please select gender.";
 
-    if (!form.password) next.password = "Nhập mật khẩu.";
+    if (!form.password) next.password = "Enter a password.";
     else if (!isStrongPassword(form.password)) {
-      next.password = "Mật khẩu cần ≥8 ký tự, có hoa, thường và số.";
+      next.password = "Password needs ≥8 characters with uppercase, lowercase, and a digit.";
     }
 
-    if (form.confirmPassword !== form.password) next.confirmPassword = "Mật khẩu xác nhận không khớp.";
+    if (form.confirmPassword !== form.password) next.confirmPassword = "Passwords do not match.";
 
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -96,7 +105,7 @@ export default function AdminModeratorCreate() {
     setApiError("");
     if (!validate()) return;
     if (!token) {
-      setApiError("Chưa đăng nhập.");
+      setApiError("Not signed in.");
       return;
     }
 
@@ -116,56 +125,49 @@ export default function AdminModeratorCreate() {
       await adminRegisterModerator(token, body);
       navigate("/admin/moderators");
     } catch (err) {
-      setApiError(adminApiError(err, "Tạo moderator thất bại."));
+      setApiError(adminApiError(err, "Failed to create moderator."));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <main className="flex-1 overflow-y-auto p-8">
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-primary">Tạo moderator</h2>
-          <p className="mt-1 text-slate-500">POST /api/Admin/moderators/register — không cần OTP email trên FE.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate("/admin/moderators")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-        >
-          Quay lại
-        </button>
-      </header>
+    <AdminPage narrow>
+      <AdminPageHeader
+        title="Create moderator"
+        description="Invite someone to help moderate listings and users."
+        actions={
+          <button type="button" onClick={() => navigate("/admin/moderators")} className={adminBtnSecondary}>
+            Back
+          </button>
+        }
+      />
 
-      {apiError ? (
-        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{apiError}</div>
-      ) : null}
+      <AdminErrorAlert>{apiError}</AdminErrorAlert>
 
-      <section className="mb-6 rounded-xl border border-primary/10 bg-white p-5 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Admin thao tác</p>
+      <div className={`${adminCard} mb-6 p-5 sm:p-6`}>
+        <span className={adminLabelClass}>Acting admin</span>
         <p className="mt-1 text-sm font-semibold text-slate-900">{adminLabel}</p>
-      </section>
+      </div>
 
       <form onSubmit={onSubmit} className="space-y-6">
-        <section className="rounded-xl border border-primary/10 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-slate-900">Thông tin</h3>
+        <AdminSection title="Profile">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Tên</span>
+              <span className="mb-1 block text-sm font-semibold text-slate-700">First name</span>
               <input
                 value={form.firstName}
                 onChange={(e) => updateField("firstName", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className={adminInput}
               />
               {errors.firstName ? <p className="mt-1 text-xs text-rose-600">{errors.firstName}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Họ & đệm</span>
+              <span className="mb-1 block text-sm font-semibold text-slate-700">Last name</span>
               <input
                 value={form.lastName}
                 onChange={(e) => updateField("lastName", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className={adminInput}
               />
               {errors.lastName ? <p className="mt-1 text-xs text-rose-600">{errors.lastName}</p> : null}
             </label>
@@ -174,7 +176,7 @@ export default function AdminModeratorCreate() {
               <input
                 value={form.username}
                 onChange={(e) => updateField("username", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className={adminInput}
               />
               {errors.username ? <p className="mt-1 text-xs text-rose-600">{errors.username}</p> : null}
             </label>
@@ -184,35 +186,35 @@ export default function AdminModeratorCreate() {
                 type="email"
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className={adminInput}
               />
               {errors.email ? <p className="mt-1 text-xs text-rose-600">{errors.email}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Điện thoại</span>
+              <span className="mb-1 block text-sm font-semibold text-slate-700">Phone</span>
               <input
                 value={form.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className={adminInput}
               />
               {errors.phone ? <p className="mt-1 text-xs text-rose-600">{errors.phone}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Ngày sinh</span>
+              <span className="mb-1 block text-sm font-semibold text-slate-700">Date of birth</span>
               <input
                 type="date"
                 value={form.birthDate}
                 onChange={(e) => updateField("birthDate", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className={adminInput}
               />
               {errors.birthDate ? <p className="mt-1 text-xs text-rose-600">{errors.birthDate}</p> : null}
             </label>
             <label className="block md:col-span-2">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Giới tính</span>
+              <span className="mb-1 block text-sm font-semibold text-slate-700">Gender</span>
               <select
                 value={form.gender}
                 onChange={(e) => updateField("gender", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className={adminSelect}
               >
                 {GENDERS.map((g) => (
                   <option key={g.value || "x"} value={g.value}>
@@ -223,57 +225,48 @@ export default function AdminModeratorCreate() {
               {errors.gender ? <p className="mt-1 text-xs text-rose-600">{errors.gender}</p> : null}
             </label>
           </div>
-        </section>
+        </AdminSection>
 
-        <section className="rounded-xl border border-primary/10 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-slate-900">Mật khẩu</h3>
+        <AdminSection title="Password">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Mật khẩu</span>
+              <span className="mb-1 block text-sm font-semibold text-slate-700">Password</span>
               <input
                 type="password"
                 value={form.password}
                 onChange={(e) => updateField("password", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className={adminInput}
               />
               {errors.password ? <p className="mt-1 text-xs text-rose-600">{errors.password}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Xác nhận</span>
+              <span className="mb-1 block text-sm font-semibold text-slate-700">Confirm</span>
               <input
                 type="password"
                 value={form.confirmPassword}
                 onChange={(e) => updateField("confirmPassword", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className={adminInput}
               />
               {errors.confirmPassword ? <p className="mt-1 text-xs text-rose-600">{errors.confirmPassword}</p> : null}
             </label>
           </div>
           <ul className="mt-3 space-y-1 text-xs text-slate-500">
-            <li className={passwordRules.length ? "text-emerald-600" : ""}>≥ 8 ký tự</li>
-            <li className={passwordRules.upper ? "text-emerald-600" : ""}>Chữ hoa</li>
-            <li className={passwordRules.lower ? "text-emerald-600" : ""}>Chữ thường</li>
-            <li className={passwordRules.number ? "text-emerald-600" : ""}>Chữ số</li>
+            <li className={passwordRules.length ? "text-emerald-600" : ""}>≥ 8 characters</li>
+            <li className={passwordRules.upper ? "text-emerald-600" : ""}>Uppercase letter</li>
+            <li className={passwordRules.lower ? "text-emerald-600" : ""}>Lowercase letter</li>
+            <li className={passwordRules.number ? "text-emerald-600" : ""}>Digit</li>
           </ul>
-        </section>
+        </AdminSection>
 
         <div className="flex flex-wrap justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/moderators")}
-            className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Hủy
+          <button type="button" onClick={() => navigate("/admin/moderators")} className={adminBtnSecondary}>
+            Cancel
           </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
-          >
-            {isSubmitting ? "Đang gửi…" : "Tạo moderator"}
+          <button type="submit" disabled={isSubmitting} className={adminBtnPrimary}>
+            {isSubmitting ? "Submitting…" : "Create moderator"}
           </button>
         </div>
       </form>
-    </main>
+    </AdminPage>
   );
 }

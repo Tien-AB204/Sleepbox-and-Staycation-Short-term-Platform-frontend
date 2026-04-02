@@ -1,5 +1,16 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { AdminErrorAlert, AdminPage, AdminPageHeader } from "../../components/admin/AdminPageChrome";
+import {
+  adminBtnPrimary,
+  adminBtnSecondary,
+  adminCard,
+  adminInput,
+  adminLabel,
+  adminTableFooter,
+  adminTableWrap,
+  adminThead,
+} from "../../components/admin/adminUi";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { adminApiError, adminGetUserList } from "../../services/adminService";
 
@@ -33,11 +44,16 @@ function normalizeUserListResponse(data) {
   };
 }
 
-const STATUS_VI = {
-  Active: "Hoạt động",
-  Suspended: "Đã tạm khóa",
-  Inactive: "Không hoạt động",
+const STATUS_DISPLAY = {
+  Active: "In good standing",
+  Suspended: "Access restricted",
+  Inactive: "Not in use",
 };
+
+function displayAccountStatus(status) {
+  if (!status) return "—";
+  return STATUS_DISPLAY[status] ?? "—";
+}
 
 const PAGE_SIZE = 12;
 
@@ -56,7 +72,7 @@ export default function AdminModerators() {
 
   const load = useCallback(async () => {
     if (!token) {
-      setError("Chưa đăng nhập.");
+      setError("Not signed in.");
       setLoading(false);
       return;
     }
@@ -69,7 +85,7 @@ export default function AdminModerators() {
       const { data } = await adminGetUserList(token, params);
       setPaged(normalizeUserListResponse(data));
     } catch (e) {
-      setError(adminApiError(e, "Không tải được danh sách moderator."));
+      setError(adminApiError(e, "Could not load moderators."));
       setPaged({ items: [], totalCount: 0, totalPages: 0 });
     } finally {
       setLoading(false);
@@ -87,95 +103,78 @@ export default function AdminModerators() {
   };
 
   return (
-    <main className="flex-1 overflow-y-auto p-8">
-      <header className="mb-8 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-        <div>
-          <h2 className="text-[30px] font-extrabold tracking-tight text-primary">Moderator</h2>
-          <p className="mt-2 text-slate-500">Danh sách tài khoản vai trò Moderator từ API.</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/admins/new")}
-            className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
-          >
-            Tạo Admin
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/admin/moderators/new")}
-            className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90"
-          >
-            <span className="material-symbols-outlined text-[18px]">person_add</span>
-            Thêm Moderator
-          </button>
-        </div>
-      </header>
+    <AdminPage>
+      <AdminPageHeader
+        title="Moderators"
+        description="People who can review listings and moderate the platform."
+        actions={
+          <>
+            <button type="button" onClick={() => navigate("/admin/admins/new")} className={adminBtnSecondary}>
+              Create admin
+            </button>
+            <button type="button" onClick={() => navigate("/admin/moderators/new")} className={`${adminBtnPrimary} gap-2`}>
+              <span className="material-symbols-outlined text-[18px]">person_add</span>
+              Add moderator
+            </button>
+          </>
+        }
+      />
 
-      {error ? (
-        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>
-      ) : null}
+      <AdminErrorAlert>{error}</AdminErrorAlert>
 
-      <div className="mb-6 rounded-xl border border-primary/10 bg-white p-4 shadow-sm">
+      <div className={`${adminCard} mb-6 p-5 sm:p-6`}>
         <form onSubmit={onSearch} className="flex flex-wrap items-end gap-3">
           <label className="min-w-[220px] flex-1">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Tìm kiếm</span>
+            <span className={adminLabel}>Search</span>
             <input
               value={searchDraft}
               onChange={(e) => setSearchDraft(e.target.value)}
               placeholder="Email, username…"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
+              className={adminInput}
             />
           </label>
-          <button
-            type="submit"
-            className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"
-          >
-            Tìm
+          <button type="submit" className={adminBtnPrimary}>
+            Search
           </button>
-          <button
-            type="button"
-            onClick={() => load()}
-            className="flex h-10 items-center gap-1 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
-          >
+          <button type="button" onClick={() => load()} className={`${adminBtnSecondary} gap-1`}>
             <span className="material-symbols-outlined text-[18px]">refresh</span>
-            Làm mới
+            Refresh
           </button>
         </form>
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-primary/10 bg-white p-6 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Tổng moderator</p>
-          <h3 className="mt-1 text-3xl font-extrabold text-slate-900">{paged.totalCount}</h3>
+        <div className={`${adminCard} p-5 sm:p-6`}>
+          <p className="text-sm font-medium text-slate-500">Total moderators</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900">{paged.totalCount}</p>
         </div>
       </div>
 
-      <section className="overflow-hidden rounded-xl border border-primary/10 bg-white shadow-sm">
-        <div className="border-b border-primary/10 px-6 py-4">
-          <h4 className="text-lg font-bold text-slate-900">Danh sách</h4>
+      <section className={adminTableWrap}>
+        <div className="border-b border-slate-200 px-6 py-4">
+          <h2 className="text-base font-bold text-slate-900">Directory</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs font-bold uppercase text-slate-500">
+            <thead className={adminThead}>
               <tr>
-                <th className="px-6 py-3">Tài khoản</th>
-                <th className="px-6 py-3">Điện thoại</th>
-                <th className="px-6 py-3">Trạng thái</th>
-                <th className="px-6 py-3 text-right">Thao tác</th>
+                <th className="px-6 py-3">Account</th>
+                <th className="px-6 py-3">Phone</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-                    Đang tải…
+                    Loading…
                   </td>
                 </tr>
               ) : paged.items.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-                    Chưa có moderator.
+                    No moderators yet.
                   </td>
                 </tr>
               ) : (
@@ -190,7 +189,7 @@ export default function AdminModerators() {
                       </td>
                       <td className="px-6 py-4 text-slate-600">{row.phone || "—"}</td>
                       <td className="px-6 py-4">
-                        <span className="text-xs font-semibold text-slate-700">{STATUS_VI[row.status] ?? row.status}</span>
+                        <span className="text-xs font-semibold text-slate-700">{displayAccountStatus(row.status)}</span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button
@@ -198,7 +197,7 @@ export default function AdminModerators() {
                           onClick={() => navigate(`/admin/moderators/${row.userId}`, { state: { row } })}
                           className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary/10"
                         >
-                          Sửa
+                          Edit
                         </button>
                       </td>
                     </tr>
@@ -208,30 +207,30 @@ export default function AdminModerators() {
             </tbody>
           </table>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-4">
+        <div className={adminTableFooter}>
           <p className="text-sm text-slate-500">
-            Trang {paged.pageNumber} / {Math.max(1, paged.totalPages)}
+            Page {paged.pageNumber} / {Math.max(1, paged.totalPages)}
           </p>
           <div className="flex gap-2">
             <button
               type="button"
               disabled={pageNumber <= 1 || loading}
               onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm disabled:opacity-40"
+              className={adminBtnSecondary}
             >
-              Trước
+              Previous
             </button>
             <button
               type="button"
               disabled={pageNumber >= paged.totalPages || loading}
               onClick={() => setPageNumber((p) => p + 1)}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm disabled:opacity-40"
+              className={adminBtnSecondary}
             >
-              Sau
+              Next
             </button>
           </div>
         </div>
       </section>
-    </main>
+    </AdminPage>
   );
 }

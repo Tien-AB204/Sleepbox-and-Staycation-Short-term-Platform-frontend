@@ -1,26 +1,27 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { AdminPage, AdminPageHeader } from "../../components/admin/AdminPageChrome";
+import { adminCard } from "../../components/admin/adminUi";
 
 export default function AdminTransactions() {
   return (
-    <main className="flex-1 overflow-y-auto p-8">
-      <header className="mb-6">
-        <h2 className="text-2xl font-extrabold text-slate-900">Giao dịch</h2>
-        <p className="mt-2 text-slate-600">
-          OpenAPI hiện không có nhóm endpoint admin riêng cho lịch sử giao dịch / thanh toán. Khi backend bổ sung, có thể gắn trang này vào danh sách đơn hoặc report.
-        </p>
-      </header>
-      <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-        Trong lúc chờ API: dùng{" "}
+    <AdminPage>
+      <AdminPageHeader
+        title="Transactions"
+        description="Payments, payouts, and reconciliation will appear here when the reporting workspace is ready."
+      />
+
+      <div className={`${adminCard} border-amber-200/80 bg-amber-50/50 px-5 py-4 text-sm text-amber-950`}>
+        For now, use{" "}
         <Link className="font-bold text-primary underline" to="/admin/users">
-          quản lý người dùng
+          user management
         </Link>{" "}
-        và{" "}
+        and{" "}
         <Link className="font-bold text-primary underline" to="/admin/pricing/platform-fee">
-          phí nền tảng
+          platform fee
         </Link>{" "}
-        cho các thao tác đã có trên BE.
+        for the tools that already exist today.
       </div>
-    </main>
+    </AdminPage>
   );
 }

@@ -1,13 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { AdminErrorAlert, AdminPage, AdminPageHeader, AdminSection } from "../../components/admin/AdminPageChrome";
+import { adminBtnPrimary, adminBtnSecondary, adminInput, adminSelect } from "../../components/admin/adminUi";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { adminApiError, adminGetUserList, adminUpdateModerator } from "../../services/adminService";
 
 const GENDERS = [
-  { value: "", label: "— Không đổi / để trống —" },
-  { value: "Male", label: "Nam" },
-  { value: "Female", label: "Nữ" },
-  { value: "Other", label: "Khác" },
+  { value: "", label: "— No change / leave empty —" },
+  { value: "Male", label: "Male" },
+  { value: "Female", label: "Female" },
+  { value: "Other", label: "Other" },
 ];
 
 function pick(obj, a, b) {
@@ -68,7 +70,7 @@ export default function AdminModeratorEdit() {
   const load = useCallback(async () => {
     if (!token || !id) {
       setLoading(false);
-      setError("Thiếu token hoặc mã moderator.");
+      setError("Missing token or moderator id.");
       return;
     }
 
@@ -87,12 +89,12 @@ export default function AdminModeratorEdit() {
       const list = Array.isArray(itemsRaw) ? itemsRaw.map(normalizeAccountItem) : [];
       const row = list.find((r) => String(r.userId) === String(id));
       if (!row) {
-        setError("Không tìm thấy moderator.");
+        setError("Moderator not found.");
       } else {
         hydrate(row);
       }
     } catch (e) {
-      setError(adminApiError(e, "Không tải được moderator."));
+      setError(adminApiError(e, "Could not load moderator."));
     } finally {
       setLoading(false);
     }
@@ -117,7 +119,7 @@ export default function AdminModeratorEdit() {
       if (lastName.trim()) body.lastName = lastName.trim();
 
       if (Object.keys(body).length === 0) {
-        setError("Nhập ít nhất một trường để cập nhật.");
+        setError("Enter at least one field to update.");
         setSaving(false);
         return;
       }
@@ -125,7 +127,7 @@ export default function AdminModeratorEdit() {
       await adminUpdateModerator(token, id, body);
       navigate("/admin/moderators");
     } catch (e) {
-      setError(adminApiError(e, "Cập nhật thất bại."));
+      setError(adminApiError(e, "Update failed."));
     } finally {
       setSaving(false);
     }
@@ -133,112 +135,80 @@ export default function AdminModeratorEdit() {
 
   if (loading) {
     return (
-      <main className="flex-1 p-8">
-        <p className="text-slate-500">Đang tải…</p>
-      </main>
+      <AdminPage narrow>
+        <p className="text-sm text-slate-500">Loading…</p>
+      </AdminPage>
     );
   }
 
   return (
-    <main className="flex-1 overflow-y-auto p-8">
-      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-extrabold text-primary">Sửa moderator</h2>
-          <p className="mt-1 text-sm text-slate-500">PUT /api/Admin/moderators/{"{id}"}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate("/admin/moderators")}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-        >
-          Quay lại
-        </button>
-      </header>
+    <AdminPage narrow>
+      <AdminPageHeader
+        title="Edit moderator"
+        description="Update profile details for this moderator."
+        actions={
+          <button type="button" onClick={() => navigate("/admin/moderators")} className={adminBtnSecondary}>
+            Back
+          </button>
+        }
+      />
 
-      {error ? (
-        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>
-      ) : null}
+      <AdminErrorAlert>{error}</AdminErrorAlert>
 
-      <form onSubmit={onSave} className="max-w-2xl space-y-4 rounded-xl border border-primary/10 bg-white p-6 shadow-sm">
-        <p className="text-sm text-slate-600">
-          Email: <span className="font-semibold text-slate-900">{emailDisplay || "—"}</span> (không đổi qua form này nếu API không hỗ trợ)
-        </p>
+      <AdminSection className="max-w-2xl">
+        <form onSubmit={onSave} className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Email: <span className="font-semibold text-slate-900">{emailDisplay || "—"}</span> (read-only on this screen)
+          </p>
 
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-700">Username</span>
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary/40"
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-700">Điện thoại</span>
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary/40"
-          />
-        </label>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Tên</span>
-            <input
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary/40"
-            />
+            <span className="text-sm font-semibold text-slate-700">Username</span>
+            <input value={username} onChange={(e) => setUsername(e.target.value)} className={`${adminInput} mt-1.5`} />
           </label>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Họ & đệm</span>
+            <span className="text-sm font-semibold text-slate-700">Phone</span>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} className={`${adminInput} mt-1.5`} />
+          </label>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">First name</span>
+              <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className={`${adminInput} mt-1.5`} />
+            </label>
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">Last name</span>
+              <input value={lastName} onChange={(e) => setLastName(e.target.value)} className={`${adminInput} mt-1.5`} />
+            </label>
+          </div>
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-700">Gender</span>
+            <select value={gender} onChange={(e) => setGender(e.target.value)} className={`${adminSelect} mt-1.5`}>
+              {GENDERS.map((g) => (
+                <option key={g.value || "_"} value={g.value}>
+                  {g.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-sm font-semibold text-slate-700">Date of birth</span>
             <input
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary/40"
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              className={`${adminInput} mt-1.5`}
             />
           </label>
-        </div>
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-700">Giới tính</span>
-          <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary/40"
-          >
-            {GENDERS.map((g) => (
-              <option key={g.value || "_"} value={g.value}>
-                {g.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block">
-          <span className="text-sm font-semibold text-slate-700">Ngày sinh</span>
-          <input
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary/40"
-          />
-        </label>
 
-        <div className="flex justify-end gap-2 pt-4">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/moderators")}
-            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
-          >
-            {saving ? "Đang lưu…" : "Lưu"}
-          </button>
-        </div>
-      </form>
-    </main>
+          <div className="flex justify-end gap-2 pt-4">
+            <button type="button" onClick={() => navigate("/admin/moderators")} className={adminBtnSecondary}>
+              Cancel
+            </button>
+            <button type="submit" disabled={saving} className={adminBtnPrimary}>
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </form>
+      </AdminSection>
+    </AdminPage>
   );
 }

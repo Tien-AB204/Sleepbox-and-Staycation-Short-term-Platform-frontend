@@ -2,8 +2,8 @@ import axios from "../config/axios";
 
 const bearer = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
 
-/** Trích lỗi ASP.NET (errors{}, message, title/detail). */
-export function adminApiError(err, fallback = "Đã xảy ra lỗi.") {
+/** Parse ASP.NET errors (errors{}, message, title/detail). */
+export function adminApiError(err, fallback = "Something went wrong.") {
   const status = err.response?.status;
   const d = err.response?.data;
 
@@ -29,8 +29,8 @@ export function adminApiError(err, fallback = "Đã xảy ra lỗi.") {
     if (d.error) return String(d.error);
   }
   if (typeof d === "string" && d.trim()) return d;
-  if (status === 401) return "Phiên đăng nhập không hợp lệ hoặc đã hết hạn.";
-  if (status === 403) return "Bạn không có quyền thực hiện thao tác này.";
+  if (status === 401) return "Session expired or invalid. Please sign in again.";
+  if (status === 403) return "You do not have permission to perform this action.";
   if (err?.message) return String(err.message);
   return fallback;
 }

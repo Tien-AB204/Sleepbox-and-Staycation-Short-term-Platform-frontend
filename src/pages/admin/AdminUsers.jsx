@@ -1,12 +1,27 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminErrorAlert, AdminPage, AdminPageHeader } from "../../components/admin/AdminPageChrome";
+import {
+  adminBtnPrimary,
+  adminBtnSecondary,
+  adminCard,
+  adminInput,
+  adminLabel,
+  adminModalPanel,
+  adminSelect,
+  adminTableFooter,
+  adminTableToolbar,
+  adminTableWrap,
+  adminTextarea,
+  adminThead,
+} from "../../components/admin/adminUi";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { adminApiError, adminGetUserList, adminSuspendUser } from "../../services/adminService";
 
 const TABS = [
-  { id: "all", label: "Tất cả", role: null },
-  { id: "guest", label: "Khách hàng", role: "Guest" },
-  { id: "host", label: "Chủ kho", role: "Host" },
-  { id: "staff", label: "Nhân viên", role: "Staff" },
+  { id: "all", label: "All", role: null },
+  { id: "guest", label: "Guest", role: "Guest" },
+  { id: "host", label: "Host", role: "Host" },
+  { id: "staff", label: "Staff", role: "Staff" },
   { id: "moderator", label: "Moderator", role: "Moderator" },
   { id: "admin", label: "Admin", role: "Admin" },
 ];
@@ -45,28 +60,39 @@ function normalizeUserListResponse(data) {
   };
 }
 
-const ROLE_VI = {
-  Guest: "Khách hàng",
-  Host: "Chủ kho",
-  Staff: "Nhân viên",
+/** UI copy only — API still uses Guest, Host, Active, … */
+const ROLE_DISPLAY = {
+  Guest: "Guest",
+  Host: "Host",
+  Staff: "Staff",
   Moderator: "Moderator",
   Admin: "Admin",
 };
 
-const STATUS_VI = {
-  Active: "Hoạt động",
-  Suspended: "Đã tạm khóa",
-  Inactive: "Không hoạt động",
+const STATUS_DISPLAY = {
+  Active: "In good standing",
+  Suspended: "Access restricted",
+  Inactive: "Not in use",
 };
+
+function displayRole(role) {
+  if (!role) return "—";
+  return ROLE_DISPLAY[role] ?? "—";
+}
+
+function displayAccountStatus(status) {
+  if (!status) return "—";
+  return STATUS_DISPLAY[status] ?? "—";
+}
 
 function formatDt(iso) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return String(iso);
-    return d.toLocaleString("vi-VN");
+    if (Number.isNaN(d.getTime())) return "—";
+    return d.toLocaleString("en-US");
   } catch {
-    return String(iso);
+    return "—";
   }
 }
 
@@ -95,7 +121,7 @@ export default function AdminUsers() {
 
   const load = useCallback(async () => {
     if (!token) {
-      setError("Chưa đăng nhập.");
+      setError("Not signed in.");
       setLoading(false);
       return;
     }
@@ -114,7 +140,7 @@ export default function AdminUsers() {
       const { data } = await adminGetUserList(token, params);
       setPaged(normalizeUserListResponse(data));
     } catch (e) {
-      setError(adminApiError(e, "Không tải được danh sách người dùng."));
+      setError(adminApiError(e, "Could not load users."));
       setPaged({ items: [], totalCount: 0, pageNumber: 1, pageSize: PAGE_SIZE, totalPages: 0 });
     } finally {
       setLoading(false);
@@ -144,7 +170,7 @@ export default function AdminUsers() {
     if (!suspendTarget || !token) return;
     const reason = suspendReason.trim();
     if (reason.length < 3) {
-      setError("Lý do tạm khóa cần ít nhất 3 ký tự.");
+      setError("Suspension reason must be at least 3 characters.");
       return;
     }
     setSuspendBusy(true);
@@ -154,67 +180,62 @@ export default function AdminUsers() {
       closeSuspend();
       await load();
     } catch (e) {
-      setError(adminApiError(e, "Tạm khóa tài khoản thất bại."));
+      setError(adminApiError(e, "Failed to suspend account."));
     } finally {
       setSuspendBusy(false);
     }
   };
 
   return (
-    <main className="flex-1 overflow-y-auto p-8">
-      <header className="mb-8">
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Quản lý người dùng</h2>
-        <p className="mt-1 text-slate-500">Danh sách từ API Admin — lọc, phân trang, tạm khóa tài khoản.</p>
-      </header>
+    <AdminPage>
+      <AdminPageHeader
+        title="User management"
+        description="Search, filter, and manage accounts. Suspend access when needed."
+      />
 
-      {error ? (
-        <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>
-      ) : null}
+      <AdminErrorAlert>{error}</AdminErrorAlert>
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-primary/10 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Tổng (trang hiện tại)</p>
+        <div className={`${adminCard} p-5 sm:p-6`}>
+          <p className="text-sm font-medium text-slate-500">Total (current query)</p>
           <p className="mt-1 text-2xl font-bold text-slate-900">{paged.totalCount}</p>
         </div>
-        <div className="rounded-xl border border-primary/10 bg-white p-5 shadow-sm md:col-span-2">
+        <div className={`${adminCard} p-5 sm:p-6 md:col-span-2`}>
           <form onSubmit={onSearchSubmit} className="flex flex-wrap items-end gap-3">
             <label className="min-w-[200px] flex-1">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Tìm kiếm</span>
+              <span className={adminLabel}>Search</span>
               <input
                 value={searchDraft}
                 onChange={(e) => setSearchDraft(e.target.value)}
-                placeholder="Email, username..."
-                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
+                placeholder="Email, username…"
+                className={adminInput}
               />
             </label>
             <label className="w-full min-w-[160px] md:w-48">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Trạng thái</span>
+              <span className={adminLabel}>Status</span>
               <select
                 value={userStatus}
                 onChange={(e) => {
                   setUserStatus(e.target.value);
                   setPageNumber(1);
                 }}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-primary/40"
+                className={adminSelect}
               >
-                <option value="">Tất cả</option>
-                <option value="Active">Hoạt động</option>
-                <option value="Suspended">Đã tạm khóa</option>
-                <option value="Inactive">Không hoạt động</option>
+                <option value="">All</option>
+                <option value="Active">{STATUS_DISPLAY.Active}</option>
+                <option value="Suspended">{STATUS_DISPLAY.Suspended}</option>
+                <option value="Inactive">{STATUS_DISPLAY.Inactive}</option>
               </select>
             </label>
-            <button
-              type="submit"
-              className="h-10 rounded-lg bg-primary px-4 text-sm font-bold text-white shadow-sm hover:opacity-90"
-            >
-              Áp dụng
+            <button type="submit" className={adminBtnPrimary}>
+              Apply
             </button>
           </form>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-primary/10 bg-white shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-primary/10 px-6 py-4">
+      <div className={adminTableWrap}>
+        <div className={adminTableToolbar}>
           <div className="flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1">
             {TABS.map((t) => (
               <button
@@ -229,39 +250,35 @@ export default function AdminUsers() {
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => load()}
-            className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-          >
+          <button type="button" onClick={() => load()} className={`${adminBtnSecondary} gap-2`}>
             <span className="material-symbols-outlined text-[20px]">refresh</span>
-            Làm mới
+            Refresh
           </button>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+            <thead className={adminThead}>
               <tr>
-                <th className="px-6 py-3">Người dùng</th>
-                <th className="px-6 py-3">Vai trò</th>
-                <th className="px-6 py-3">Trạng thái</th>
-                <th className="px-6 py-3">Đăng nhập gần nhất</th>
-                <th className="px-6 py-3">Ngày tạo</th>
-                <th className="px-6 py-3 text-right">Thao tác</th>
+                <th className="px-6 py-3">User</th>
+                <th className="px-6 py-3">Role</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Last login</th>
+                <th className="px-6 py-3">Created</th>
+                <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    Đang tải…
+                    Loading…
                   </td>
                 </tr>
               ) : paged.items.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    Không có bản ghi.
+                    No records found.
                   </td>
                 </tr>
               ) : (
@@ -278,7 +295,7 @@ export default function AdminUsers() {
                       </td>
                       <td className="px-6 py-4">
                         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                          {ROLE_VI[row.role] ?? row.role}
+                          {displayRole(row.role)}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -300,7 +317,7 @@ export default function AdminUsers() {
                                   : "bg-slate-300"
                             }`}
                           />
-                          {STATUS_VI[row.status] ?? row.status}
+                          {displayAccountStatus(row.status)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-slate-600">{formatDt(row.lastLoginAt)}</td>
@@ -315,7 +332,7 @@ export default function AdminUsers() {
                             }}
                             className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-50"
                           >
-                            Tạm khóa
+                            Suspend
                           </button>
                         ) : (
                           <span className="text-xs text-slate-400">—</span>
@@ -329,26 +346,26 @@ export default function AdminUsers() {
           </table>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-4">
+        <div className={adminTableFooter}>
           <p className="text-sm text-slate-500">
-            Trang {paged.pageNumber} / {Math.max(1, paged.totalPages)} — {paged.totalCount} người dùng
+            Page {paged.pageNumber} / {Math.max(1, paged.totalPages)} — {paged.totalCount} users
           </p>
           <div className="flex gap-2">
             <button
               type="button"
               disabled={pageNumber <= 1 || loading}
               onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium disabled:opacity-40"
+              className={adminBtnSecondary}
             >
-              Trước
+              Previous
             </button>
             <button
               type="button"
               disabled={pageNumber >= paged.totalPages || loading}
               onClick={() => setPageNumber((p) => p + 1)}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium disabled:opacity-40"
+              className={adminBtnSecondary}
             >
-              Sau
+              Next
             </button>
           </div>
         </div>
@@ -356,42 +373,37 @@ export default function AdminUsers() {
 
       {suspendTarget ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-900">Tạm khóa tài khoản</h3>
+          <div className={adminModalPanel}>
+            <h3 className="text-lg font-bold text-slate-900">Suspend account</h3>
             <p className="mt-2 text-sm text-slate-600">
               <span className="font-semibold">{suspendTarget.username || suspendTarget.email}</span>
             </p>
             <label className="mt-4 block">
-              <span className="text-sm font-semibold text-slate-700">Lý do (bắt buộc)</span>
+              <span className="text-sm font-semibold text-slate-700">Reason (required)</span>
               <textarea
                 value={suspendReason}
                 onChange={(e) => setSuspendReason(e.target.value)}
                 rows={4}
-                className="mt-1 w-full rounded-lg border border-slate-200 p-3 text-sm outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20"
-                placeholder="Nhập lý do tối thiểu 3 ký tự…"
+                className={`${adminTextarea} mt-2`}
+                placeholder="Enter a reason (at least 3 characters)…"
               />
             </label>
             <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeSuspend}
-                disabled={suspendBusy}
-                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-              >
-                Hủy
+              <button type="button" onClick={closeSuspend} disabled={suspendBusy} className={adminBtnSecondary}>
+                Cancel
               </button>
               <button
                 type="button"
                 onClick={confirmSuspend}
                 disabled={suspendBusy}
-                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-rose-600 px-4 text-sm font-bold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                {suspendBusy ? "Đang xử lý…" : "Xác nhận tạm khóa"}
+                {suspendBusy ? "Processing…" : "Confirm suspend"}
               </button>
             </div>
           </div>
         </div>
       ) : null}
-    </main>
+    </AdminPage>
   );
 }

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { AdminPage, AdminPageHeader } from "../../components/admin/AdminPageChrome";
+import { adminBtnSecondary, adminCard, adminSelect } from "../../components/admin/adminUi";
 import { useAuthContext } from "../../contexts/AuthContext";
 import { adminGetUserList } from "../../services/adminService";
 
@@ -54,18 +56,18 @@ export default function AdminDashboard() {
         iconColor: "text-emerald-600",
         badge: "+12.5%",
         badgeClass: "bg-emerald-50 text-emerald-600",
-        label: "Tổng doanh thu",
-        value: "2.540.000.000đ",
+        label: "Total revenue",
+        value: "₫2,540,000,000",
       },
       {
         icon: "person",
         iconBg: "bg-blue-50",
         iconColor: "text-blue-600",
-        badge: "API",
+        badge: "Live",
         badgeClass: "bg-blue-50 text-blue-600",
-        label: "Tổng người dùng",
-        value: userTotal != null ? userTotal.toLocaleString("vi-VN") : "—",
-        sub: modTotal != null ? `${modTotal.toLocaleString("vi-VN")} moderator` : undefined,
+        label: "Total users",
+        value: userTotal != null ? userTotal.toLocaleString("en-US") : "—",
+        sub: modTotal != null ? `${modTotal.toLocaleString("en-US")} moderators` : undefined,
       },
       {
         icon: "bed",
@@ -73,7 +75,7 @@ export default function AdminDashboard() {
         iconColor: "text-orange-600",
         badge: "+8.1%",
         badgeClass: "bg-orange-50 text-orange-600",
-        label: "Tỷ lệ lấp đầy",
+        label: "Occupancy rate",
         value: "84.2%",
       },
       {
@@ -82,7 +84,7 @@ export default function AdminDashboard() {
         iconColor: "text-primary",
         badge: "+15",
         badgeClass: "bg-primary/10 text-primary",
-        label: "Tổng số tin đăng",
+        label: "Total listings",
         value: "1,120",
       },
     ],
@@ -90,41 +92,37 @@ export default function AdminDashboard() {
   );
 
   return (
-    <main className="flex-1 p-8">
-      <header className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Tổng quan hệ thống</h2>
-          <p className="text-slate-500">
-            Chào mừng trở lại. Số người dùng / moderator lấy từ{" "}
+    <AdminPage>
+      <AdminPageHeader
+        title="System overview"
+        description={
+          <>
+            Welcome back. Live user and moderator totals come from the{" "}
             <Link to="/admin/users" className="font-semibold text-primary hover:underline">
-              API danh sách tài khoản
+              user directory
             </Link>
-            ; các ô khác là minh hoạ UI.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium transition-colors hover:bg-white"
-          >
-            <span className="material-symbols-outlined text-sm">calendar_today</span>
-            Hôm nay, 24 Tháng 5
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white"
-          >
-            <span className="material-symbols-outlined text-sm">download</span>
-            Xuất báo cáo
-          </button>
-        </div>
-      </header>
+            . Other tiles are illustrative until reporting is connected.
+          </>
+        }
+        actions={
+          <>
+            <button type="button" className={`${adminBtnSecondary} gap-2`}>
+              <span className="material-symbols-outlined text-sm">calendar_today</span>
+              Today, May 24
+            </button>
+            <button type="button" className="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm hover:opacity-90">
+              <span className="material-symbols-outlined text-sm">download</span>
+              Export report
+            </button>
+          </>
+        }
+      />
 
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {topStats.map((m) => (
           <div
             key={m.label}
-            className="rounded-xl border border-slate-200 bg-white p-6"
+            className={`${adminCard} p-6`}
           >
             <div className="mb-4 flex items-start justify-between">
               <div className={`rounded-lg p-2 ${m.iconBg}`}>
@@ -140,12 +138,12 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 lg:col-span-2">
+        <div className={`${adminCard} p-6 lg:col-span-2`}>
           <div className="mb-6 flex items-center justify-between">
-            <h4 className="text-lg font-bold">Xu hướng đặt phòng</h4>
-            <select className="rounded-lg border-none bg-slate-50 text-sm focus:ring-2 focus:ring-primary/30">
-              <option>7 ngày qua</option>
-              <option>30 ngày qua</option>
+            <h4 className="text-lg font-bold">Booking trend</h4>
+            <select className={`${adminSelect} max-w-[200px] border-slate-100 bg-slate-50`}>
+              <option>Last 7 days</option>
+              <option>Last 30 days</option>
             </select>
           </div>
           <div className="relative flex h-64 items-center justify-center overflow-hidden rounded-lg bg-slate-50">
@@ -158,12 +156,12 @@ export default function AdminDashboard() {
                 />
               ))}
             </div>
-            <p className="relative z-10 text-xs italic text-slate-400">Dữ liệu đặt phòng theo thời gian thực</p>
+            <p className="relative z-10 text-xs italic text-slate-400">Live booking data (illustrative)</p>
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6">
-          <h4 className="mb-6 text-lg font-bold">Phân bố cơ sở</h4>
+        <div className={`${adminCard} p-6`}>
+          <h4 className="mb-6 text-lg font-bold">Property distribution</h4>
           <div className="relative h-64 overflow-hidden rounded-lg bg-slate-100">
             <div
               className="absolute inset-0 bg-cover bg-center opacity-70"
@@ -171,21 +169,21 @@ export default function AdminDashboard() {
             />
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="rounded-lg bg-white/90 p-3 text-center shadow-xl">
-                <p className="text-xs font-bold text-primary">Tập trung nhất</p>
-                <p className="text-sm">Quận 1, Quận 10</p>
+                <p className="text-xs font-bold text-primary">Highest density</p>
+                <p className="text-sm">District 1, District 10</p>
               </div>
             </div>
           </div>
           <div className="mt-4 space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Quận 1</span>
+              <span className="text-slate-500">District 1</span>
               <span className="font-bold">342 Sleepbox</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-slate-100">
               <div className="h-1.5 w-[85%] rounded-full bg-primary" />
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500">Quận 7</span>
+              <span className="text-slate-500">District 7</span>
               <span className="font-bold">185 Sleepbox</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-slate-100">
@@ -196,11 +194,11 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <div className={`${adminCard} p-6`}>
           <div className="mb-6 flex items-center justify-between">
-            <h4 className="text-lg font-bold">Phê duyệt đang chờ</h4>
+            <h4 className="text-lg font-bold">Pending approvals</h4>
             <button type="button" className="text-sm font-semibold text-primary hover:underline">
-              Xem tất cả
+              View all
             </button>
           </div>
           <div className="space-y-4">
@@ -213,8 +211,8 @@ export default function AdminDashboard() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <h5 className="text-sm font-bold">Luxury SleepBox Quận 1</h5>
-                <p className="text-xs text-slate-500">Chủ nhà: Nguyễn Văn A • 2 giờ trước</p>
+                <h5 className="text-sm font-bold">Luxury SleepBox District 1</h5>
+                <p className="text-xs text-slate-500">Host: Alex Nguyen • 2 hours ago</p>
               </div>
               <div className="flex gap-2">
                 <button type="button" className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50">
@@ -230,8 +228,8 @@ export default function AdminDashboard() {
                 <span className="material-symbols-outlined text-primary">person_add</span>
               </div>
               <div className="min-w-0 flex-1">
-                <h5 className="text-sm font-bold">Đăng ký Host: Trần Thị B</h5>
-                <p className="text-xs text-slate-500">Xác minh CCCD đang chờ • 5 giờ trước</p>
+                <h5 className="text-sm font-bold">Host signup: Jane Tran</h5>
+                <p className="text-xs text-slate-500">ID verification pending • 5 hours ago</p>
               </div>
               <div className="flex gap-2">
                 <button type="button" className="rounded-lg p-1.5 text-emerald-600 hover:bg-emerald-50">
@@ -245,24 +243,24 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <div className={`${adminCard} p-6`}>
           <div className="mb-6 flex items-center justify-between">
-            <h4 className="text-lg font-bold">Tranh chấp cần xử lý</h4>
+            <h4 className="text-lg font-bold">Disputes to resolve</h4>
             <button type="button" className="text-sm font-semibold text-primary hover:underline">
-              Xem tất cả
+              View all
             </button>
           </div>
           <div className="space-y-4">
             <div className="rounded-xl border border-rose-100 bg-rose-50/30 p-4">
               <div className="mb-2 flex justify-between">
                 <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase text-rose-600">
-                  Nghiêm trọng
+                  Severe
                 </span>
                 <span className="text-[10px] text-slate-500">ID: #4920</span>
               </div>
-              <h5 className="mb-1 text-sm font-bold">Khiếu nại vệ sinh & Tiếng ồn</h5>
+              <h5 className="mb-1 text-sm font-bold">Cleanliness & noise complaint</h5>
               <p className="mb-3 line-clamp-2 text-xs text-slate-600">
-                Khách hàng báo cáo cơ sở không đúng như mô tả và có tiếng ồn lớn vào ban đêm tại chi nhánh Bình Thạnh...
+                Guest reports the listing does not match the description and loud noise at night at the Binh Thanh branch...
               </p>
               <div className="flex items-center justify-between">
                 <div className="flex -space-x-2">
@@ -276,28 +274,28 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 <button type="button" className="flex items-center gap-1 text-xs font-bold text-primary">
-                  Can thiệp ngay <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                  Intervene now <span className="material-symbols-outlined text-xs">arrow_forward</span>
                 </button>
               </div>
             </div>
             <div className="rounded-xl border border-slate-200 p-4">
               <div className="mb-2 flex justify-between">
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-600">
-                  Trung bình
+                  Medium
                 </span>
                 <span className="text-[10px] text-slate-500">ID: #4918</span>
               </div>
-              <h5 className="mb-1 text-sm font-bold">Yêu cầu hoàn tiền</h5>
-              <p className="mb-3 text-xs text-slate-600">Lỗi thanh toán trùng lặp khi đặt phòng tại Quận 10.</p>
+              <h5 className="mb-1 text-sm font-bold">Refund request</h5>
+              <p className="mb-3 text-xs text-slate-600">Duplicate payment error for a booking in District 10.</p>
               <div className="flex justify-end">
                 <button type="button" className="flex items-center gap-1 text-xs font-bold text-primary">
-                  Xem chi tiết <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                  View details <span className="material-symbols-outlined text-xs">arrow_forward</span>
                 </button>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </main>
+    </AdminPage>
   );
 }
