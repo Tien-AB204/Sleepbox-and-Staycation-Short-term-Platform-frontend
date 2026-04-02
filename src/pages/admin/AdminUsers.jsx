@@ -31,6 +31,16 @@ function pick(obj, a, b) {
   return obj[a] ?? obj[b];
 }
 
+function pickAccountStatus(raw) {
+  if (!raw) return "";
+  const s =
+    pick(raw, "status", "Status") ??
+    pick(raw, "accountStatus", "AccountStatus") ??
+    pick(raw, "userStatus", "UserStatus");
+  if (s == null) return "";
+  return String(s);
+}
+
 function normalizeAccountItem(raw) {
   return {
     userId: pick(raw, "userId", "UserId"),
@@ -38,7 +48,7 @@ function normalizeAccountItem(raw) {
     email: pick(raw, "email", "Email") ?? "",
     phone: pick(raw, "phone", "Phone") ?? "",
     role: pick(raw, "role", "Role") ?? "",
-    status: pick(raw, "status", "Status") ?? "",
+    status: pickAccountStatus(raw),
     isEmailVerified: pick(raw, "isEmailVerified", "IsEmailVerified"),
     lastLoginAt: pick(raw, "lastLoginAt", "LastLoginAt"),
     createdAt: pick(raw, "createdAt", "CreatedAt"),
