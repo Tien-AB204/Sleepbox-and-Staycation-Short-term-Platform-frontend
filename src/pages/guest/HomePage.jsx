@@ -83,7 +83,7 @@ const Home = () => {
                     <span className="material-symbols-outlined text-slate-400 text-xl">
                       calendar_today
                     </span>
-                    <span className="text-sm font-extrabold text-slate-900 whitespace-nowrap italic">
+                    <span className="text-sm font-extrabold text-slate-900 whitespace-nowrap">
                       {date} | {fromTime} - {toTime}
                     </span>
                   </div>
@@ -168,7 +168,7 @@ const Home = () => {
       </section>
 
       {/* Map Promotion */}
-      <section className="w-full flex justify-center py-12 mb-20">
+      {/* <section className="w-full flex justify-center py-12 mb-20">
         <div className="w-full max-w-[1200px] px-4 lg:px-0">
           <div className="bg-[#351a5b]/5 rounded-2xl p-8 flex flex-col md:flex-row items-center gap-8">
             <div className="flex-1">
@@ -195,7 +195,7 @@ const Home = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };

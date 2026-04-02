@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { login as loginService } from "../../services/authService";
 import { useAuthContext } from "../../contexts/AuthContext";
+import axios from "../../config/axios"; // Dùng axios đã config sẵn của dự án
 
 /** Sau đăng nhập — mọi role (guest / host / nội bộ) */
 const ROLE_HOME = {
   guest: "/",
   host: "/host/dashboard",
   staff: "/staff/dashboard",
-  moderator: "/moderator/user-management",
+  moderator: "/moderator/host-approvals", // Sửa lại trang đích của Mod cho chuẩn với luồng duyệt Host mới làm
   admin: "/admin/dashboard",
 };
 
@@ -27,6 +27,7 @@ export default function InternalLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuthContext();
@@ -42,22 +43,37 @@ export default function InternalLoginPage() {
     }
   }, []);
 
+  // =====================================================================
+  // GỌI API LOGIN THẬT
+  // =====================================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    
     try {
-      const data = await loginService(email, password);
+      // 1. Bắn API
+      const response = await axios.post("auth/login", { 
+        email, 
+        password 
+      });
+      
+      const data = response.data; // BE trả về object chứa { accessToken, role, userId, email, expiresAt }
+
+      // 2. Chuyển đổi role (BE trả về "MODERATOR", FE cần "moderator")
       const userRole = (data.role || "guest").toLowerCase();
 
+      // 3. Chuẩn bị thông tin User để lưu vào Context
       const loggedInUser = {
         userId: data.userId,
         email: data.email || email,
         role: userRole,
       };
 
+      // 4. Lưu User & Token vào Context + LocalStorage/Cookie
       login(loggedInUser, data.accessToken);
 
+      // 5. Xử lý Ghi nhớ đăng nhập
       if (remember) {
         try {
           localStorage.setItem("internalLoginRemember", email);
@@ -68,11 +84,15 @@ export default function InternalLoginPage() {
         localStorage.removeItem("internalLoginRemember");
       }
 
+      // 6. Chuyển hướng
       const defaultHome = ROLE_HOME[userRole] ?? "/";
       const target = intendedPath ?? defaultHome;
       navigate(target, { replace: true });
+      
     } catch (err) {
-      setError(typeof err === "string" ? err : err?.toString?.() || "Đăng nhập thất bại");
+      // Bắt lỗi từ BE (Ví dụ: Sai mật khẩu, tài khoản không tồn tại)
+      const errMsg = err.response?.data?.message || err.response?.data || "Đăng nhập thất bại. Vui lòng kiểm tra lại email/mật khẩu!";
+      setError(typeof errMsg === "string" ? errMsg : "Lỗi kết nối đến máy chủ.");
     } finally {
       setLoading(false);
     }
@@ -119,7 +139,7 @@ export default function InternalLoginPage() {
 
           <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
             {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 font-medium">{error}</div>
             )}
 
             <div className="flex flex-col gap-2">
@@ -128,7 +148,7 @@ export default function InternalLoginPage() {
               </label>
               <input
                 id="internal-email"
-                className="h-14 w-full rounded-lg border border-primary/10 bg-slate-50 p-4 text-base text-slate-900 transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="h-14 w-full rounded-lg border border-primary/10 bg-slate-50 p-4 text-base text-slate-900 transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
                 placeholder="name@company.com"
                 type="email"
                 autoComplete="username"
@@ -147,7 +167,7 @@ export default function InternalLoginPage() {
               <div className="relative flex items-center">
                 <input
                   id="internal-password"
-                  className="h-14 w-full rounded-lg border border-primary/10 bg-slate-50 p-4 pr-12 text-base text-slate-900 transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="h-14 w-full rounded-lg border border-primary/10 bg-slate-50 p-4 pr-12 text-base text-slate-900 transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
                   placeholder="Nhập mật khẩu"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
@@ -186,45 +206,20 @@ export default function InternalLoginPage() {
             </div>
 
             <button
-              className="h-14 w-full rounded-lg bg-primary text-base font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60"
+              className="h-14 w-full rounded-lg bg-primary text-base font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
               type="submit"
               disabled={loading}
             >
-              {loading ? "Đang đăng nhập..." : "Đăng nhập vào hệ thống"}
+              {loading ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+                  Đang đăng nhập...
+                </>
+              ) : (
+                "Đăng nhập vào hệ thống"
+              )}
             </button>
           </form>
-
-          <div className="relative my-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-primary/10" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-4 text-xs font-bold tracking-widest text-slate-400">Hoặc tiếp tục với</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              className="flex h-12 items-center justify-center gap-3 rounded-lg border border-primary/10 bg-white transition-colors hover:bg-slate-50"
-            >
-              <img
-                alt=""
-                className="size-5"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiUM97cucBfaVCqBeZ1EOGibzdz0IHHXmzzc6iqecqctiKq2fRnCMALc0kNAsbPpG8IQG4NPGrn53Q3Y9iSefEK9ViqX4DQhu1E7Tpd8QrHtPZoqZ9p5NUNRcmKRTnIY55mRFQuHJ5QARQ0kGIYxMcScD_r68YFeQy_AzY3g7P6ORI1G78qa-nHKg_HB193UwvCapHgvNt-rEYWoD4SWi2wjuIZWoX7WAmrOxCemLMs1HjKLqllPPqxQCsJAqrdc2esBqH1po8QQsN"
-              />
-              <span className="text-sm font-bold text-slate-700">Google</span>
-            </button>
-            <button
-              type="button"
-              className="flex h-12 items-center justify-center gap-3 rounded-lg border border-primary/10 bg-white transition-colors hover:bg-slate-50"
-            >
-              <svg className="size-5 fill-[#0077b5]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-              </svg>
-              <span className="text-sm font-bold text-slate-700">LinkedIn</span>
-            </button>
-          </div>
 
           <div className="mt-8 space-y-2 text-center text-sm">
             <p className="font-medium text-slate-500">
@@ -243,7 +238,7 @@ export default function InternalLoginPage() {
       </main>
 
       <footer className="flex flex-col items-center justify-between gap-4 border-t border-primary/5 bg-transparent px-6 py-8 md:flex-row">
-        <p className="text-xs font-medium text-slate-400">© 2024 BoxHub Logistics Solutions Inc. All rights reserved.</p>
+        <p className="text-xs font-medium text-slate-400">© 2026 BoxHub Logistics Solutions Inc. All rights reserved.</p>
         <div className="flex gap-6">
           <a className="text-xs font-semibold text-slate-400 transition-colors hover:text-primary" href="#">
             Privacy Policy

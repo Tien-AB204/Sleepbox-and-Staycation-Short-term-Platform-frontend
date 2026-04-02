@@ -14,7 +14,7 @@ import HostOnboardingLayout from "../layouts/HostOnboardingLayout";
 import HostOnboardingPage from "../pages/host/onboarding/HostOnboardingPage";
 
 // Guest Pages
-import Home from "../pages/guest/HomePage";
+import Home from "../pages/guest/Homepage";
 import Search from "../pages/guest/Search";
 import RoomDetail from "../pages/guest/RoomDetail";
 import BookingSummary from "../pages/guest/BookingSummary";
@@ -46,20 +46,26 @@ import StaffIssues from "../pages/staff/StaffIssues";
 import StaffVerification from "../pages/staff/StaffVerification";
 import StaffProfile from "../pages/staff/StaffProfile";
 
-// Admin (Stitch)
+// Moderator pages
+import HostApproval from "../pages/moderator/HostApproval";
+import FacilityApproval from "../pages/moderator/FacilityApproval";
+import DisputeManagement from "../pages/moderator/DisputeManagement";
+import UserManagement from "../pages/moderator/UserManagement";
+
+// Admin pages
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminUsers from "../pages/admin/AdminUsers";
 import AdminModerators from "../pages/admin/AdminModerators";
 import AdminModeratorCreate from "../pages/admin/AdminModeratorCreate";
 import AdminTransactions from "../pages/admin/AdminTransactions";
 import AdminSettings from "../pages/admin/AdminSettings";
+import BookingDetail from "../pages/guest/BookingDetail";
 
 // Các trang placeholder khác
 const ForgotPassword = () => <div>Forgot Password</div>;
 const EmailVerifyPage = () => <div>Email Verify</div>;
 const NotFound = () => <div>404 Not Found</div>;
 const Forbidden = () => <div>403 Forbidden</div>;
-const ModeratorUserManagement = () => <div>Moderator User Management</div>;
 
 const AppRouter = () => (
   <Router>
@@ -79,13 +85,7 @@ const AppRouter = () => (
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<Search />} />
         <Route path="/room/:id" element={<RoomDetail />} />
-      </Route>
-
-      
-
-      {/* Chỉ cần là User đã đăng nhập (không quan tâm role gì) là thanh toán được */}
-      <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
-        <Route path="/booking-summary" element={<BookingSummary />} />
+        
       </Route>
 
       {/* Các trang Profile, Lịch sử... bọc trong GuestLayout và chỉ yêu cầu Đã Đăng Nhập */}
@@ -96,6 +96,8 @@ const AppRouter = () => (
         <Route path="/message" element={<Message />} /> 
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/favorites" element={<Favorites />} />
+        <Route path="/booking-summary" element={<BookingSummary />} />
+        <Route path="/booking-detail" element={<BookingDetail />} />
       </Route>
 
       {/* Đăng ký Host — 7 bước (Stitch), không cần đăng nhập để bắt đầu */}
@@ -148,8 +150,22 @@ const AppRouter = () => (
         <Route path="/staff/verification" element={<StaffVerification />} />
         <Route path="/staff/profile" element={<StaffProfile />} />
       </Route>
-      <Route element={<ProtectedRoute roles={["moderator"]}><ModeratorLayout /></ProtectedRoute>}>
-        <Route path="/moderator/user-management" element={<ModeratorUserManagement />} />
+
+      {/* ==================================================== */}
+      {/* 5. MODERATOR ROUTES                                  */}
+      {/* ==================================================== */}
+      <Route
+        element={
+          <ProtectedRoute roles={["moderator"]}>
+            <ModeratorLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/moderator" element={<Navigate to="/moderator/approvals" replace />} />
+        <Route path="/moderator/host-approvals" element={<HostApproval />} />
+        <Route path="/moderator/approvals" element={<FacilityApproval />} />
+        <Route path="/moderator/disputes" element={<DisputeManagement />} />
+        <Route path="/moderator/users" element={<UserManagement />} />
       </Route>
 
       {/* ==================================================== */}
