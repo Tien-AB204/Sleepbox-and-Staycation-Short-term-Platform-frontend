@@ -1,19 +1,35 @@
 import axios from "axios";
 
+// =========================================================================
+// CẤU HÌNH BASE URL (ĐANG ACTIVE: THUẦN RENDER)
+// Ưu tiên bắn thẳng lên server thật để test dữ liệu chuẩn.
+// =========================================================================
+const baseURL = "https://boxhub-sleepbox-platform-backend.onrender.com/api";
+
+/* // =========================================================================
+// ĐOẠN CODE BACKUP DÀNH CHO TEAM (LOCAL + RENDER)
+// Mở comment đoạn này (và comment dòng baseURL ở trên) nếu muốn chạy dev qua Proxy của Vite để né CORS khi code local.
+// =========================================================================
+// const API_ORIGIN = import.meta.env.VITE_API_ORIGIN != null && String(import.meta.env.VITE_API_ORIGIN).trim() !== ""
+//   ? String(import.meta.env.VITE_API_ORIGIN).replace(/\/$/, "")
+//   : import.meta.env.DEV
+//     ? "" // Nếu là môi trường Dev, để chuỗi rỗng để Vite Proxy (trong vite.config.js) tự động mồi URL
+//     : "https://boxhub-sleepbox-platform-backend.onrender.com";
+//
+// const baseURL = `${API_ORIGIN}/api`;
+*/
+
 const instance = axios.create({
-  baseURL: "https://boxhub-sleepbox-platform-backend.onrender.com/api", 
+  baseURL: baseURL,
   timeout: 15000,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 // =========================================================================
-// 1. REQUEST INTERCEPTOR: Kẻ chặn đường trước khi gửi API
+// 1. REQUEST INTERCEPTOR: Tự động đính kèm Token
 // =========================================================================
 instance.interceptors.request.use(
   (config) => {
-    // Moi token từ localStorage (Lưu ý: Check xem AuthContext của bạn đang lưu key là gì, thường là "accessToken")
+    // Đọc token từ localStorage
     const token = localStorage.getItem("accessToken"); 
     
     // Nếu có token, tự động nhét vào Header Authorization
@@ -29,19 +45,19 @@ instance.interceptors.request.use(
 );
 
 // =========================================================================
-// 2. RESPONSE INTERCEPTOR: Kẻ chặn đường khi Backend trả dữ liệu về
+// 2. RESPONSE INTERCEPTOR: Xử lý lỗi từ Backend trả về
 // =========================================================================
 instance.interceptors.response.use(
   (response) => {
     return response;
   },
   (error) => {
-    // Nếu Backend chửi 401 Unauthorized (do token hết hạn hoặc sai)
+    // Nếu Backend báo 401 Unauthorized (Token hết hạn hoặc bị sai)
     if (error.response && error.response.status === 401) {
-      console.warn("Token hết hạn hoặc không hợp lệ. Đang đá văng ra login...");
-      // Mở khóa 2 dòng dưới nếu bạn muốn tự động đá user về trang đăng nhập khi token chết:
-      // localStorage.removeItem("accessToken");
-      // window.location.href = "/login";
+      console.warn("Token hết hạn hoặc không hợp lệ.");
+      // Mở khóa 2 dòng dưới nếu muốn tự động đá user về trang đăng nhập khi token chết:
+      localStorage.removeItem("accessToken");
+      window.location.href = "/internal/login";
     }
     return Promise.reject(error);
   }

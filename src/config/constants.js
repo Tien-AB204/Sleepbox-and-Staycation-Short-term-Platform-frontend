@@ -9,9 +9,8 @@ export const ROLES = {
 };
 
 export const API_ENDPOINTS = {
-  LOGIN: "/api/auth/guest/login",
-  REGISTER: "/api/auth/guest/register",
-  // Add more endpoints as needed
+  LOGIN: "/auth/login",
+  REGISTER: "/auth/guest/register",
 };
 
 export const PAYMENT_METHODS = {

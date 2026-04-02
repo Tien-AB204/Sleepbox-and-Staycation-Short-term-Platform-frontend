@@ -1,16 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminErrorAlert, AdminPage, AdminPageHeader, AdminSection } from "../../components/admin/AdminPageChrome";
-import {
-  adminBtnPrimary,
-  adminBtnSecondary,
-  adminCard,
-  adminInput,
-  adminLabel as adminLabelClass,
-  adminSelect,
-} from "../../components/admin/adminUi";
+import { adminBtnPrimary, adminBtnSecondary, adminInput, adminSelect } from "../../components/admin/adminUi";
 import { useAuthContext } from "../../contexts/AuthContext";
-import { adminApiError, adminRegisterModerator } from "../../services/adminService";
+import { adminApiError, adminRegisterAdmin } from "../../services/adminService";
 
 const GENDERS = [
   { value: "", label: "Select gender" },
@@ -39,7 +32,7 @@ const initialForm = {
   confirmPassword: "",
 };
 
-export default function AdminModeratorCreate() {
+export default function AdminAdminCreate() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const token = user?.token;
@@ -48,8 +41,6 @@ export default function AdminModeratorCreate() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
-
-  const adminLabel = user?.email || user?.unique_name || "Admin";
 
   const passwordRules = useMemo(
     () => ({
@@ -74,28 +65,17 @@ export default function AdminModeratorCreate() {
 
     if (!form.firstName.trim()) next.firstName = "Please enter first name.";
     if (!form.lastName.trim()) next.lastName = "Please enter last name.";
-
     if (!username) next.username = "Please enter username.";
-    else if (!/^[a-z0-9._-]{4,50}$/.test(username)) {
-      next.username = "Username: lowercase letters, digits, . _ - and 4–50 characters.";
-    }
-
+    else if (!/^[a-z0-9._-]{4,50}$/.test(username)) next.username = "Invalid username.";
     if (!email) next.email = "Please enter email.";
     else if (!isValidEmail(email)) next.email = "Invalid email.";
-
-    if (!form.phone.trim()) next.phone = "Please enter phone number.";
+    if (!form.phone.trim()) next.phone = "Phone number is required.";
     else if (!/^[0-9]{9,15}$/.test(form.phone.replace(/\s/g, ""))) next.phone = "Invalid phone number.";
-
     if (!form.birthDate) next.birthDate = "Please select date of birth.";
     if (!form.gender) next.gender = "Please select gender.";
-
     if (!form.password) next.password = "Enter a password.";
-    else if (!isStrongPassword(form.password)) {
-      next.password = "Password needs ≥8 characters with uppercase, lowercase, and a digit.";
-    }
-
+    else if (!isStrongPassword(form.password)) next.password = "Password is not strong enough.";
     if (form.confirmPassword !== form.password) next.confirmPassword = "Passwords do not match.";
-
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -108,7 +88,6 @@ export default function AdminModeratorCreate() {
       setApiError("Not signed in.");
       return;
     }
-
     const body = {
       username: form.username.trim().toLowerCase(),
       email: form.email.trim().toLowerCase(),
@@ -119,13 +98,12 @@ export default function AdminModeratorCreate() {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
     };
-
     setIsSubmitting(true);
     try {
-      await adminRegisterModerator(token, body);
-      navigate("/admin/moderators");
+      await adminRegisterAdmin(token, body);
+      navigate("/admin/users");
     } catch (err) {
-      setApiError(adminApiError(err, "Failed to create moderator."));
+      setApiError(adminApiError(err, "Failed to register admin."));
     } finally {
       setIsSubmitting(false);
     }
@@ -134,8 +112,8 @@ export default function AdminModeratorCreate() {
   return (
     <AdminPage narrow>
       <AdminPageHeader
-        title="Create moderator"
-        description="Invite someone to help moderate listings and users."
+        title="Create admin account"
+        description="Grant full admin access to a new team member."
         actions={
           <button type="button" onClick={() => navigate("/admin/moderators")} className={adminBtnSecondary}>
             Back
@@ -145,76 +123,71 @@ export default function AdminModeratorCreate() {
 
       <AdminErrorAlert>{apiError}</AdminErrorAlert>
 
-      <div className={`${adminCard} mb-6 p-5 sm:p-6`}>
-        <span className={adminLabelClass}>Acting admin</span>
-        <p className="mt-1 text-sm font-semibold text-slate-900">{adminLabel}</p>
-      </div>
-
-      <form onSubmit={onSubmit} className="space-y-6">
+      <form onSubmit={onSubmit} className="max-w-3xl space-y-6">
         <AdminSection title="Profile">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">First name</span>
+              <span className="text-sm font-semibold text-slate-700">First name</span>
               <input
                 value={form.firstName}
                 onChange={(e) => updateField("firstName", e.target.value)}
-                className={adminInput}
+                className={`${adminInput} mt-1.5`}
               />
               {errors.firstName ? <p className="mt-1 text-xs text-rose-600">{errors.firstName}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Last name</span>
+              <span className="text-sm font-semibold text-slate-700">Last name</span>
               <input
                 value={form.lastName}
                 onChange={(e) => updateField("lastName", e.target.value)}
-                className={adminInput}
+                className={`${adminInput} mt-1.5`}
               />
               {errors.lastName ? <p className="mt-1 text-xs text-rose-600">{errors.lastName}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Username</span>
+              <span className="text-sm font-semibold text-slate-700">Username</span>
               <input
                 value={form.username}
                 onChange={(e) => updateField("username", e.target.value)}
-                className={adminInput}
+                className={`${adminInput} mt-1.5`}
               />
               {errors.username ? <p className="mt-1 text-xs text-rose-600">{errors.username}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Email</span>
+              <span className="text-sm font-semibold text-slate-700">Email</span>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
-                className={adminInput}
+                className={`${adminInput} mt-1.5`}
               />
               {errors.email ? <p className="mt-1 text-xs text-rose-600">{errors.email}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Phone</span>
+              <span className="text-sm font-semibold text-slate-700">Phone</span>
               <input
                 value={form.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
-                className={adminInput}
+                className={`${adminInput} mt-1.5`}
               />
               {errors.phone ? <p className="mt-1 text-xs text-rose-600">{errors.phone}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Date of birth</span>
+              <span className="text-sm font-semibold text-slate-700">Date of birth</span>
               <input
                 type="date"
                 value={form.birthDate}
                 onChange={(e) => updateField("birthDate", e.target.value)}
-                className={adminInput}
+                className={`${adminInput} mt-1.5`}
               />
               {errors.birthDate ? <p className="mt-1 text-xs text-rose-600">{errors.birthDate}</p> : null}
             </label>
             <label className="block md:col-span-2">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Gender</span>
+              <span className="text-sm font-semibold text-slate-700">Gender</span>
               <select
                 value={form.gender}
                 onChange={(e) => updateField("gender", e.target.value)}
-                className={adminSelect}
+                className={`${adminSelect} mt-1.5`}
               >
                 {GENDERS.map((g) => (
                   <option key={g.value || "x"} value={g.value}>
@@ -230,22 +203,22 @@ export default function AdminModeratorCreate() {
         <AdminSection title="Password">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Password</span>
+              <span className="text-sm font-semibold text-slate-700">Password</span>
               <input
                 type="password"
                 value={form.password}
                 onChange={(e) => updateField("password", e.target.value)}
-                className={adminInput}
+                className={`${adminInput} mt-1.5`}
               />
               {errors.password ? <p className="mt-1 text-xs text-rose-600">{errors.password}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Confirm</span>
+              <span className="text-sm font-semibold text-slate-700">Confirm</span>
               <input
                 type="password"
                 value={form.confirmPassword}
                 onChange={(e) => updateField("confirmPassword", e.target.value)}
-                className={adminInput}
+                className={`${adminInput} mt-1.5`}
               />
               {errors.confirmPassword ? <p className="mt-1 text-xs text-rose-600">{errors.confirmPassword}</p> : null}
             </label>
@@ -258,12 +231,9 @@ export default function AdminModeratorCreate() {
           </ul>
         </AdminSection>
 
-        <div className="flex flex-wrap justify-end gap-3">
-          <button type="button" onClick={() => navigate("/admin/moderators")} className={adminBtnSecondary}>
-            Cancel
-          </button>
+        <div className="flex justify-end gap-2">
           <button type="submit" disabled={isSubmitting} className={adminBtnPrimary}>
-            {isSubmitting ? "Submitting…" : "Create moderator"}
+            {isSubmitting ? "Creating…" : "Create admin"}
           </button>
         </div>
       </form>

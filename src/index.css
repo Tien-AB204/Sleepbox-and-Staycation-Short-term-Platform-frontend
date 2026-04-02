@@ -12,6 +12,9 @@
 
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
+
+  --animate-host-onboarding-next: host-onboarding-slide-next 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-host-onboarding-prev: host-onboarding-slide-prev 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Host dispute page — scrollbar từ bản Stitch */
@@ -32,4 +35,27 @@
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Host onboarding — chuyển bước có cảm giác “trượt trang” */
+@keyframes host-onboarding-slide-next {
+  from {
+    opacity: 0;
+    transform: translate3d(1.75rem, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes host-onboarding-slide-prev {
+  from {
+    opacity: 0;
+    transform: translate3d(-1.75rem, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }

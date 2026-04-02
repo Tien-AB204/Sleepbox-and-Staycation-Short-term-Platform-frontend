@@ -7,11 +7,15 @@ const ADMIN_AVATAR_URL =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuCiPE7Vtr_12Smk8-Nlm-iDZwWzQNM27s_-yjnKM9n7SVFVpq-Fsswg9hKw-4yvmEn8MVjC4j1E_oX0Cy2n_2eN13RNBLoY86E7ubEszBf0Govmuef-lCv8q8uWWRnRRuqUA8kINQxzlsItP_TCyGh5_fw2FnLC_D7jfS64B0Y1OD_udQDbVFB0FoIySLKKyasgC9FNMc9s1n7fZzNifhmg2WJiDr8TjsMGszEybExYOo85_MrWdTpQ7fZPFXJfjinuj7J2h3B8LQYD";
 
 const navItems = [
-  { to: "/admin/dashboard", label: "Bảng điều khiển", icon: "dashboard" },
-  { to: "/admin/users", label: "Người dùng", icon: "group" },
+  { to: "/admin/dashboard", label: "Dashboard", icon: "dashboard" },
+  { to: "/admin/users", label: "Users", icon: "group" },
   { to: "/admin/moderators", label: "Moderators", icon: "gavel" },
-  { to: "/admin/transactions", label: "Giao dịch", icon: "receipt_long" },
-  { to: "/admin/settings", label: "Cài đặt hệ thống", icon: "settings" },
+  { to: "/admin/pricing/addons", label: "Add-ons", icon: "add_circle" },
+  { to: "/admin/pricing/box-limits", label: "Box price limits", icon: "sell" },
+  { to: "/admin/pricing/platform-fee", label: "Platform fee", icon: "percent" },
+  { to: "/admin/pricing/system-rules", label: "Pricing rules", icon: "rule" },
+  { to: "/admin/transactions", label: "Transactions", icon: "receipt_long" },
+  { to: "/admin/settings", label: "Settings & links", icon: "settings" },
 ];
 
 export default function AdminLayout() {
@@ -28,7 +32,7 @@ export default function AdminLayout() {
           </div>
           <div className="flex flex-col">
             <h1 className="text-base font-bold leading-tight text-primary">BoxHub Admin</h1>
-            <p className="text-xs text-slate-500">Quản trị hệ thống</p>
+            <p className="text-xs text-slate-500">System administration</p>
           </div>
         </div>
 
@@ -58,7 +62,7 @@ export default function AdminLayout() {
               <img src={ADMIN_AVATAR_URL} alt="" className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">Quản trị viên</p>
+              <p className="truncate text-sm font-semibold">Administrator</p>
               <p className="truncate text-xs text-slate-500">{email}</p>
             </div>
           </div>
@@ -68,7 +72,7 @@ export default function AdminLayout() {
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
           >
             <span className="material-symbols-outlined text-[20px]">logout</span>
-            Đăng xuất
+            Sign out
           </button>
         </div>
       </aside>

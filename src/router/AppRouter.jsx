@@ -36,6 +36,7 @@ import HostStaff from "../pages/host/HostStaff";
 import HostStatistics from "../pages/host/HostStatistics";
 import HostMessages from "../pages/host/HostMessages";
 import HostDisputes from "../pages/host/HostDisputes";
+import HostAmenities from "../pages/host/HostAmenities";
 
 // Staff pages
 import StaffDashboard from "../pages/staff/StaffDashboard";
@@ -57,6 +58,12 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import AdminUsers from "../pages/admin/AdminUsers";
 import AdminModerators from "../pages/admin/AdminModerators";
 import AdminModeratorCreate from "../pages/admin/AdminModeratorCreate";
+import AdminModeratorEdit from "../pages/admin/AdminModeratorEdit";
+import AdminAdminCreate from "../pages/admin/AdminAdminCreate";
+import AdminAddonServices from "../pages/admin/AdminAddonServices";
+import AdminBoxTypePriceLimits from "../pages/admin/AdminBoxTypePriceLimits";
+import AdminPlatformFee from "../pages/admin/AdminPlatformFee";
+import AdminSystemPriceRules from "../pages/admin/AdminSystemPriceRules";
 import AdminTransactions from "../pages/admin/AdminTransactions";
 import AdminSettings from "../pages/admin/AdminSettings";
 import BookingDetail from "../pages/guest/BookingDetail";
@@ -129,6 +136,7 @@ const AppRouter = () => (
         <Route path="/host/statistics" element={<HostStatistics />} />
         <Route path="/host/messages" element={<HostMessages />} />
         <Route path="/host/disputes" element={<HostDisputes />} />
+        <Route path="/host/amenities" element={<HostAmenities />} />
       </Route>
 
       {/* ==================================================== */}
@@ -183,6 +191,12 @@ const AppRouter = () => (
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/moderators" element={<AdminModerators />} />
         <Route path="/admin/moderators/new" element={<AdminModeratorCreate />} />
+        <Route path="/admin/moderators/:id" element={<AdminModeratorEdit />} />
+        <Route path="/admin/admins/new" element={<AdminAdminCreate />} />
+        <Route path="/admin/pricing/addons" element={<AdminAddonServices />} />
+        <Route path="/admin/pricing/box-limits" element={<AdminBoxTypePriceLimits />} />
+        <Route path="/admin/pricing/platform-fee" element={<AdminPlatformFee />} />
+        <Route path="/admin/pricing/system-rules" element={<AdminSystemPriceRules />} />
         <Route path="/admin/transactions" element={<AdminTransactions />} />
         <Route path="/admin/settings" element={<AdminSettings />} />
       </Route>

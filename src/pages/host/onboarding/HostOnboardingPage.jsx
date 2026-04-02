@@ -8,6 +8,14 @@ import {
   clearHostOnboardingDraft,
 } from "../../../utils/hostOnboarding";
 import { HOST_STEPS } from "./hostOnboardingSteps";
+import {
+  sendHostRegisterOtp,
+  verifyHostRegisterOtp,
+  resendHostRegisterOtp,
+  updateHostRegisterDraft,
+  getHostRegisterDraft,
+  setHostPassword,
+} from "../../../services/hostService";
 
 const IMG_HOST =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuCtprjlY6ZRvEVmL5JMhqaC890HCAiuNyj4_IOwpQjpAwj_5emfO5VQMUCsIdbX-G0NXpeWAAzhrwNZOO5EdWyxMXn7yaeXtM1PQVUqI7Il_4Zh33T3IYga_SZolNGraj0yrvqDs5u0_9DmayE02MTvvP1AhJu1c_rxaTivbvQuTVTT0rHi8V84vx0QUtuNU4NK21sMWk8CEGCwU54Xj747Je8T9AF2owE3x_Z5oz0dXbL2SxWF4ldK1gihEJ6hzRvyQIPDi4-rqN7m";
@@ -20,6 +28,173 @@ const IMG_OFFICE_SIDEBAR =
 
 const inputField =
   "w-full rounded-xl border-0 bg-primary/5 px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/30";
+
+const fieldLabel =
+  "mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500";
+
+const HOST_ONBOARD_STEP3_ERR_KEYS = new Set([
+  "username",
+  "lastName",
+  "firstName",
+  "phone",
+  "idNumber",
+  "representativeFront",
+  "representativeBack",
+]);
+const HOST_ONBOARD_STEP4_ERR_KEYS = new Set([
+  "companyName",
+  "taxCode",
+  "brandName",
+  "district",
+  "ward",
+  "companyAddress",
+  "companyRegistration",
+  "brandAvatar",
+]);
+const HOST_ONBOARD_STEP5_ERR_KEYS = new Set(["bankName", "bankAccount", "bankHolder", "paymentMethod"]);
+
+/** Khôi phục draft cũ chỉ có fullName → tách họ / đệm+tên cho default input. */
+const legacyDraftNameDefaults = (draft) => {
+  if (draft?.lastName != null || draft?.firstName != null) {
+    return { lastName: draft.lastName || "", firstName: draft.firstName || "" };
+  }
+  const raw = String(draft?.fullName || "").trim();
+  if (!raw) return { lastName: "", firstName: "" };
+  const parts = raw.split(/\s+/);
+  if (parts.length === 1) return { lastName: parts[0], firstName: parts[0] };
+  return { lastName: parts[0], firstName: parts.slice(1).join(" ") };
+};
+
+const onboardingErrorMessage = (err, fallback) => {
+  if (typeof err === "string") return err;
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+};
+
+/** File đính kèm đăng ký — không ghi sessionStorage, chỉ giữ trong phiên đến khi gửi một lần lên API. */
+const emptyRegisterDraftFiles = () => ({
+  representativeFront: null,
+  representativeBack: null,
+  companyRegistration: null,
+  brandAvatar: null,
+});
+
+const buildRegisterDraftApiPayload = (d, files) => {
+  const fullName =
+    String(d.fullName || "").trim() ||
+    [d.lastName, d.firstName].filter(Boolean).join(" ").trim();
+  const phone = typeof d.phone === "string" ? d.phone.trim() : d.phone;
+  const idNum = typeof d.idNumber === "string" ? d.idNumber.trim() : d.idNumber;
+  /** Khớp multipart schema Swagger backend (`first_name`, `representative_front_url`, …). */
+  return {
+    email: d.email,
+    username: d.username,
+    phone,
+    first_name: d.firstName,
+    last_name: d.lastName,
+    representative_id_name: fullName,
+    representative_id_number: idNum,
+    representative_front_url: files.representativeFront,
+    representative_back_url: files.representativeBack,
+    brand_name: d.brandName,
+    business_name: d.companyName,
+    tax_code: d.taxCode,
+    address_district: d.district,
+    address_ward: d.ward,
+    address_detail: d.companyAddress,
+    company_registration: files.companyRegistration,
+    brand_avatar: files.brandAvatar,
+    bank_name: d.bankName,
+    account_number: d.bankAccount,
+    account_name: d.bankHolder,
+    payment_method: d.paymentMethod,
+  };
+};
+
+const validateFullRegisterDraft = (d, files) => {
+  const errs = [];
+  if (!String(d.username || "").trim()) errs.push("Tên đăng nhập");
+  if (!String(d.lastName || "").trim() || !String(d.firstName || "").trim()) errs.push("Họ và tên");
+  if (!String(d.phone || "").trim()) errs.push("Số điện thoại");
+  if (!String(d.idNumber || "").trim()) errs.push("Số CCCD/CMND");
+  if (!(files.representativeFront instanceof File) || files.representativeFront.size <= 0) {
+    errs.push("Ảnh mặt trước CCCD");
+  }
+  if (!(files.representativeBack instanceof File) || files.representativeBack.size <= 0) {
+    errs.push("Ảnh mặt sau CCCD");
+  }
+  if (!String(d.companyName || "").trim()) errs.push("Tên doanh nghiệp");
+  if (!String(d.brandName || "").trim()) errs.push("Tên thương hiệu");
+  if (!String(d.district || "").trim()) errs.push("Quận/Huyện");
+  if (!String(d.ward || "").trim()) errs.push("Phường/Xã");
+  if (!String(d.companyAddress || "").trim()) errs.push("Địa chỉ trụ sở");
+  if (!(files.companyRegistration instanceof File) || files.companyRegistration.size <= 0) {
+    errs.push("Giấy phép kinh doanh (file)");
+  }
+  if (!(files.brandAvatar instanceof File) || files.brandAvatar.size <= 0) {
+    errs.push("Avatar thương hiệu (file)");
+  }
+  if (!String(d.bankAccount || "").trim()) errs.push("Số tài khoản ngân hàng");
+  if (!String(d.bankHolder || "").trim()) errs.push("Tên chủ tài khoản");
+  return errs;
+};
+
+const MAX_ID_CARD_IMAGE_BYTES = 5 * 1024 * 1024;
+const ID_CARD_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+/** Tên đăng nhập: email hợp lệ hoặc 4–50 ký tự [a-z0-9._-] (không dấu cách). */
+const validateHostUsername = (raw) => {
+  const s = String(raw ?? "").trim();
+  if (!s) return "Vui lòng nhập tên đăng nhập.";
+  if (s.includes("@")) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return "Email không đúng định dạng.";
+    return "";
+  }
+  if (s.length < 4 || s.length > 50) return "Tên đăng nhập cần 4–50 ký tự.";
+  if (!/^[a-z0-9._-]+$/i.test(s)) return "Chỉ dùng chữ không dấu, số, dấu chấm, gạch dưới và gạch ngang.";
+  return "";
+};
+
+const VI_NAME_RE = /^[\p{L}\s'.-]+$/u;
+const validateVietnameseNamePart = (raw, fieldLabel) => {
+  const t = String(raw ?? "").trim();
+  if (!t) return `Vui lòng nhập ${fieldLabel}.`;
+  if (/\d/.test(t)) return `${fieldLabel} không được chứa chữ số.`;
+  if (!VI_NAME_RE.test(t)) return `${fieldLabel} chỉ gồm chữ (có dấu), khoảng trắng, dấu . ' -`;
+  if (t.length > 80) return `${fieldLabel} tối đa 80 ký tự.`;
+  return "";
+};
+
+const normalizeVnPhoneDigits = (raw) => {
+  let s = String(raw ?? "").replace(/[\s.-]/g, "");
+  if (s.startsWith("+84")) s = `0${s.slice(3)}`;
+  else if (s.startsWith("84") && s.length >= 10) s = `0${s.slice(2)}`;
+  return s;
+};
+
+const validateVietnamPhone = (raw) => {
+  const s = normalizeVnPhoneDigits(raw);
+  if (!s) return "Vui lòng nhập số điện thoại.";
+  if (!/^0[35789]\d{8}$/.test(s)) {
+    return "Số điện thoại Việt Nam: 10 số, đầu 03 / 05 / 07 / 08 / 09 (có thể nhập +84…).";
+  }
+  return "";
+};
+
+const validateCitizenIdNumber = (raw) => {
+  const d = String(raw ?? "").replace(/\s/g, "");
+  if (!d) return "Vui lòng nhập số CCCD/CMND.";
+  if (!/^\d+$/.test(d)) return "Chỉ nhập chữ số.";
+  if (d.length !== 9 && d.length !== 12) return "CMND: 9 số — CCCD: 12 số.";
+  return "";
+};
+
+const validateIdCardImageFile = (file) => {
+  if (!(file instanceof File) || file.size <= 0) return "Vui lòng chọn ảnh.";
+  if (!ID_CARD_IMAGE_TYPES.has(file.type)) return "Chỉ dùng ảnh JPG, PNG hoặc WebP.";
+  if (file.size > MAX_ID_CARD_IMAGE_BYTES) return "Ảnh tối đa 5MB.";
+  return "";
+};
 
 /** 6 ô OTP — giống layout Stitch */
 function OtpSix({ onComplete }) {
@@ -83,6 +258,78 @@ export default function HostOnboardingPage() {
   const [draft, setDraft] = useState(() => getHostOnboardingDraft());
   const [otpReady, setOtpReady] = useState(false);
   const [pwStrength, setPwStrength] = useState(0);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [otpInfo, setOtpInfo] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
+  const [settingPassword, setSettingPassword] = useState(false);
+
+  const idFrontBlobRef = useRef(null);
+  const idBackBlobRef = useRef(null);
+  const idFrontInputRef = useRef(null);
+  const idBackInputRef = useRef(null);
+  const [idFrontPreviewUrl, setIdFrontPreviewUrl] = useState(null);
+  const [idBackPreviewUrl, setIdBackPreviewUrl] = useState(null);
+  const [idFrontFileLabel, setIdFrontFileLabel] = useState("");
+  const [idBackFileLabel, setIdBackFileLabel] = useState("");
+  const [registerDraftFiles, setRegisterDraftFiles] = useState(emptyRegisterDraftFiles);
+
+  const companyRegInputRef = useRef(null);
+  const brandAvatarInputRef = useRef(null);
+  const companyRegBlobRef = useRef(null);
+  const brandAvatarBlobRef = useRef(null);
+  const [companyRegPreviewUrl, setCompanyRegPreviewUrl] = useState(null);
+  const [companyRegIsPdf, setCompanyRegIsPdf] = useState(false);
+  const [companyRegFileLabel, setCompanyRegFileLabel] = useState("");
+  const [brandAvatarPreviewUrl, setBrandAvatarPreviewUrl] = useState(null);
+  const [brandAvatarFileLabel, setBrandAvatarFileLabel] = useState("");
+  const [apiFieldErrors, setApiFieldErrors] = useState({});
+  /** Lỗi validate tức thì bước 3 (ưu tiên hiển thị cùng lỗi API). */
+  const [step3FieldErrors, setStep3FieldErrors] = useState({});
+
+  const clearApiField = (key) => {
+    setApiFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const inputErrRing = "ring-2 ring-red-500 bg-red-50/40";
+  const inpCls = (fieldKey, extra = "") =>
+    [inputField, extra, apiFieldErrors[fieldKey] ? inputErrRing : ""].filter(Boolean).join(" ");
+
+  const inpClsStep3 = (fieldKey, extra = "") =>
+    [
+      inputField,
+      extra,
+      apiFieldErrors[fieldKey] || step3FieldErrors[fieldKey] ? inputErrRing : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+  /** Ưu tiên lỗi API (sau submit); khi đang gõ, `clearApiField` xóa API và còn validate client. */
+  const step3Msg = (key) => apiFieldErrors[key] || step3FieldErrors[key];
+
+  const bindStep3ValidatedInput = (key, validator) => ({
+    onInput: (e) => {
+      clearApiField(key);
+      const msg = validator(e.target.value);
+      setStep3FieldErrors((prev) => {
+        const next = { ...prev };
+        if (msg) next[key] = msg;
+        else delete next[key];
+        return next;
+      });
+    },
+  });
+
+  const showApiErrOutsideStep = (stepKeys) =>
+    Object.keys(apiFieldErrors).length > 0 && Object.keys(apiFieldErrors).some((k) => !stepKeys.has(k));
 
   useEffect(() => {
     if (step && (parseInt(step, 10) < 1 || parseInt(step, 10) > 7 || Number.isNaN(parseInt(step, 10)))) {
@@ -90,12 +337,319 @@ export default function HostOnboardingPage() {
     }
   }, [step, navigate]);
 
+  useEffect(() => {
+    if (current !== 3) setStep3FieldErrors({});
+  }, [current]);
+
+  useEffect(() => {
+    if (current !== 3) {
+      if (idFrontBlobRef.current) {
+        URL.revokeObjectURL(idFrontBlobRef.current);
+        idFrontBlobRef.current = null;
+      }
+      if (idBackBlobRef.current) {
+        URL.revokeObjectURL(idBackBlobRef.current);
+        idBackBlobRef.current = null;
+      }
+      setIdFrontPreviewUrl(null);
+      setIdBackPreviewUrl(null);
+      setIdFrontFileLabel("");
+      setIdBackFileLabel("");
+    }
+  }, [current]);
+
+  /** Quay lại bước 3 — khôi phục ảnh CCCD đã chọn (chỉ lưu RAM, không qua sessionStorage). */
+  useEffect(() => {
+    if (current !== 3) return;
+    const front = registerDraftFiles.representativeFront;
+    const back = registerDraftFiles.representativeBack;
+    if (front instanceof File && front.size > 0) applyFrontFile(front, true);
+    if (back instanceof File && back.size > 0) applyBackFile(back, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ khôi phục khi vào lại bước 3 hoặc file đã lưu thay đổi
+  }, [current, registerDraftFiles.representativeFront, registerDraftFiles.representativeBack]);
+
+  useEffect(() => {
+    if (current !== 4) {
+      if (companyRegBlobRef.current) {
+        URL.revokeObjectURL(companyRegBlobRef.current);
+        companyRegBlobRef.current = null;
+      }
+      if (brandAvatarBlobRef.current) {
+        URL.revokeObjectURL(brandAvatarBlobRef.current);
+        brandAvatarBlobRef.current = null;
+      }
+      setCompanyRegPreviewUrl(null);
+      setCompanyRegIsPdf(false);
+      setCompanyRegFileLabel("");
+      setBrandAvatarPreviewUrl(null);
+      setBrandAvatarFileLabel("");
+    }
+  }, [current]);
+
+  useEffect(() => {
+    if (current !== 4) return;
+    const reg = registerDraftFiles.companyRegistration;
+    const av = registerDraftFiles.brandAvatar;
+    if (reg instanceof File && reg.size > 0) applyCompanyRegFile(reg, true);
+    if (av instanceof File && av.size > 0 && av.type.startsWith("image/")) applyBrandAvatarFile(av, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, registerDraftFiles.companyRegistration, registerDraftFiles.brandAvatar]);
+
+  useEffect(() => {
+    return () => {
+      if (idFrontBlobRef.current) URL.revokeObjectURL(idFrontBlobRef.current);
+      if (idBackBlobRef.current) URL.revokeObjectURL(idBackBlobRef.current);
+      if (companyRegBlobRef.current) URL.revokeObjectURL(companyRegBlobRef.current);
+      if (brandAvatarBlobRef.current) URL.revokeObjectURL(brandAvatarBlobRef.current);
+    };
+  }, []);
+
+  const assignToInput = (inputRef, file) => {
+    if (!inputRef.current || !file) return;
+    try {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      inputRef.current.files = dt.files;
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const applyFrontFile = (file, syncInput = false) => {
+    if (idFrontBlobRef.current) {
+      URL.revokeObjectURL(idFrontBlobRef.current);
+      idFrontBlobRef.current = null;
+    }
+    setStep3FieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.representativeFront;
+      return next;
+    });
+
+    if (!file) {
+      setIdFrontPreviewUrl(null);
+      setIdFrontFileLabel("");
+      return;
+    }
+
+    setIdFrontFileLabel(file.name);
+
+    const fileErr = validateIdCardImageFile(file);
+    if (fileErr) {
+      setStep3FieldErrors((prev) => ({ ...prev, representativeFront: fileErr }));
+      setIdFrontPreviewUrl(null);
+      if (syncInput) assignToInput(idFrontInputRef, file);
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    idFrontBlobRef.current = url;
+    setIdFrontPreviewUrl(url);
+    clearApiField("representativeFront");
+    if (syncInput) assignToInput(idFrontInputRef, file);
+  };
+
+  const applyBackFile = (file, syncInput = false) => {
+    if (idBackBlobRef.current) {
+      URL.revokeObjectURL(idBackBlobRef.current);
+      idBackBlobRef.current = null;
+    }
+    setStep3FieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.representativeBack;
+      return next;
+    });
+
+    if (!file) {
+      setIdBackPreviewUrl(null);
+      setIdBackFileLabel("");
+      return;
+    }
+
+    setIdBackFileLabel(file.name);
+
+    const fileErr = validateIdCardImageFile(file);
+    if (fileErr) {
+      setStep3FieldErrors((prev) => ({ ...prev, representativeBack: fileErr }));
+      setIdBackPreviewUrl(null);
+      if (syncInput) assignToInput(idBackInputRef, file);
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    idBackBlobRef.current = url;
+    setIdBackPreviewUrl(url);
+    clearApiField("representativeBack");
+    if (syncInput) assignToInput(idBackInputRef, file);
+  };
+
+  const onIdFrontFileChange = (e) => {
+    applyFrontFile(e.target.files?.[0], false);
+  };
+
+  const onIdBackFileChange = (e) => {
+    applyBackFile(e.target.files?.[0], false);
+  };
+
+  const onIdFrontDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) applyFrontFile(file, true);
+  };
+
+  const onIdBackDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) applyBackFile(file, true);
+  };
+
+  const applyCompanyRegFile = (file, syncInput = false) => {
+    if (companyRegBlobRef.current) {
+      URL.revokeObjectURL(companyRegBlobRef.current);
+      companyRegBlobRef.current = null;
+    }
+    if (!file || file.size <= 0) {
+      setCompanyRegPreviewUrl(null);
+      setCompanyRegIsPdf(false);
+      setCompanyRegFileLabel("");
+      return;
+    }
+    const isPdf = file.type === "application/pdf";
+    setCompanyRegIsPdf(isPdf);
+    setCompanyRegFileLabel(file.name);
+    if (isPdf) {
+      setCompanyRegPreviewUrl(null);
+    } else if (file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      companyRegBlobRef.current = url;
+      setCompanyRegPreviewUrl(url);
+    } else {
+      setCompanyRegPreviewUrl(null);
+    }
+    clearApiField("companyRegistration");
+    if (syncInput) assignToInput(companyRegInputRef, file);
+  };
+
+  const applyBrandAvatarFile = (file, syncInput = false) => {
+    if (brandAvatarBlobRef.current) {
+      URL.revokeObjectURL(brandAvatarBlobRef.current);
+      brandAvatarBlobRef.current = null;
+    }
+    if (file && file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      brandAvatarBlobRef.current = url;
+      setBrandAvatarPreviewUrl(url);
+      setBrandAvatarFileLabel(file.name);
+      clearApiField("brandAvatar");
+      if (syncInput) assignToInput(brandAvatarInputRef, file);
+    } else {
+      setBrandAvatarPreviewUrl(null);
+      setBrandAvatarFileLabel("");
+    }
+  };
+
+  const onCompanyRegFileChange = (e) => {
+    applyCompanyRegFile(e.target.files?.[0], false);
+  };
+
+  const onBrandAvatarFileChange = (e) => {
+    applyBrandAvatarFile(e.target.files?.[0], false);
+  };
+
+  const onCompanyRegDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file && (file.type.startsWith("image/") || file.type === "application/pdf")) {
+      applyCompanyRegFile(file, true);
+    }
+  };
+
+  const onBrandAvatarDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("image/")) applyBrandAvatarFile(file, true);
+  };
+
   const patchDraft = (p) => {
     saveHostOnboardingDraft(p);
     setDraft((d) => ({ ...d, ...p }));
   };
 
   const go = (n) => navigate(`/host/register/${n}`);
+
+  const getRegisterCredentials = () => {
+    const draftId = draft.registerDraftId;
+    const token = draft.registerToken;
+    if (!draftId || !token) {
+      throw new Error("Thiếu draftId hoặc token đăng ký. Vui lòng xác thực OTP lại.");
+    }
+    return { draftId, token };
+  };
+
+  const saveDraftToApi = async (payload) => {
+    const { draftId, token } = getRegisterCredentials();
+    setSavingDraft(true);
+    setOtpError("");
+    try {
+      await updateHostRegisterDraft({ draftId, token, payload });
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
+  const applyDraftApiCatch = (error, fallbackMsg) => {
+    if (error instanceof Error && error.fieldErrors && typeof error.fieldErrors === "object") {
+      setApiFieldErrors(error.fieldErrors);
+    } else {
+      setApiFieldErrors({});
+    }
+    setOtpError(onboardingErrorMessage(error, fallbackMsg));
+  };
+
+  /** Một lần gửi multipart đầy đủ sau bước ngân hàng (sau khi user đã điền hết các bước 3–5). */
+  const submitFullRegisterDraft = async (mergedDraft, files) => {
+    setOtpError("");
+    setApiFieldErrors({});
+    const missing = validateFullRegisterDraft(mergedDraft, files);
+    if (missing.length) {
+      setOtpError(`Vui lòng hoàn thành: ${missing.join(", ")}.`);
+      return false;
+    }
+    try {
+      await saveDraftToApi(buildRegisterDraftApiPayload(mergedDraft, files));
+      setApiFieldErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof Error && error.fieldErrors && typeof error.fieldErrors === "object") {
+        setApiFieldErrors(error.fieldErrors);
+      } else {
+        setApiFieldErrors({});
+      }
+      setOtpError(onboardingErrorMessage(error, "Không thể gửi hồ sơ đăng ký."));
+      return false;
+    }
+  };
+
+  const handleSendOtp = async (email) => {
+    if (!email) return;
+    setSendingOtp(true);
+    setOtpError("");
+    setOtpInfo("");
+    try {
+      const result = await sendHostRegisterOtp(email);
+      patchDraft({
+        email,
+        registerDraftId: result?.draftId || draft.registerDraftId,
+        registerToken: result?.token || draft.registerToken,
+      });
+      setOtpInfo("Đã gửi OTP đến email của bạn.");
+      go(2);
+    } catch (error) {
+      setOtpError(onboardingErrorMessage(error, "Không thể gửi OTP. Vui lòng thử lại."));
+    } finally {
+      setSendingOtp(false);
+    }
+  };
 
   const finishAndEnterHost = async () => {
     setHostOnboardingComplete();
@@ -160,13 +714,12 @@ export default function HostOnboardingPage() {
             </div>
             <form
               className="space-y-8"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
-                const email = fd.get("email")?.trim();
+                const email = fd.get("email")?.trim().toLowerCase();
                 if (!email) return;
-                patchDraft({ email });
-                go(2);
+                await handleSendOtp(email);
               }}
             >
               <div className="space-y-3">
@@ -187,12 +740,14 @@ export default function HostOnboardingPage() {
                 <p className="px-1 text-[10px] italic text-slate-400">
                   Sử dụng email cá nhân hoặc email doanh nghiệp để quản lý không gian của bạn.
                 </p>
+                {otpError ? <p className="px-1 text-xs text-red-600">{otpError}</p> : null}
               </div>
               <button
                 type="submit"
+                disabled={sendingOtp}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 text-lg font-bold text-white shadow-sm transition hover:shadow-md active:scale-[0.98]"
               >
-                Gửi yêu cầu đăng ký
+                {sendingOtp ? "Đang gửi..." : "Gửi yêu cầu đăng ký"}
                 <span className="material-symbols-outlined text-xl transition group-hover:translate-x-1">arrow_forward</span>
               </button>
               <p className="text-center text-xs text-slate-500">
@@ -231,30 +786,46 @@ export default function HostOnboardingPage() {
           </h1>
           <p className="mx-auto max-w-lg text-lg text-slate-600">
             Chúng tôi đã gửi mã 6 chữ số đến{" "}
-            <span className="font-bold text-primary">{draft.email || "email của bạn"}</span>. Nhập mã bên dưới (demo: bất kỳ 6 số).
+            <span className="font-bold text-primary">{draft.email || "email của bạn"}</span>. Nhập mã bên dưới để xác thực.
           </p>
+          {otpInfo ? <p className="mt-2 text-sm font-medium text-emerald-600">{otpInfo}</p> : null}
+          {otpError ? <p className="mt-2 text-sm font-medium text-red-600">{otpError}</p> : null}
         </div>
 
         <div className="mb-8 rounded-xl border border-slate-200/80 bg-white p-8 shadow-sm">
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              if (!otpReady) return;
-              patchDraft({ emailVerified: true });
-              go(3);
+              if (!otpReady || !draft.email || !otpCode) return;
+              setVerifyingOtp(true);
+              setOtpError("");
+              try {
+                const result = await verifyHostRegisterOtp({ email: draft.email, otpCode });
+                patchDraft({
+                  emailVerified: !!result?.success,
+                  registerDraftId: result?.draftId || draft.registerDraftId,
+                  registerToken: result?.token || draft.registerToken,
+                });
+                go(3);
+              } catch (error) {
+                setOtpError(onboardingErrorMessage(error, "Mã OTP không hợp lệ hoặc đã hết hạn."));
+              } finally {
+                setVerifyingOtp(false);
+              }
             }}
           >
             <OtpSix
               onComplete={(code) => {
-                if (code.length === 6) setOtpReady(true);
+                setOtpCode(code);
+                setOtpReady(code.length === 6);
               }}
             />
             <button
               type="submit"
-              disabled={!otpReady}
+              disabled={!otpReady || verifyingOtp}
               className="w-full rounded-xl bg-primary py-4 text-lg font-bold text-white shadow-sm transition hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
             >
-              Xác nhận tài khoản
+              {verifyingOtp ? "Đang xác thực..." : "Xác nhận tài khoản"}
             </button>
           </form>
         </div>
@@ -262,8 +833,26 @@ export default function HostOnboardingPage() {
         <div className="mb-8 flex flex-col items-center gap-6">
           <p className="font-medium text-slate-600">
             Không nhận được email?{" "}
-            <button type="button" className="font-bold text-primary hover:underline">
-              Gửi lại mã
+            <button
+              type="button"
+              disabled={sendingOtp || !draft.email}
+              onClick={async () => {
+                if (!draft.email) return;
+                setSendingOtp(true);
+                setOtpError("");
+                setOtpInfo("");
+                try {
+                  await resendHostRegisterOtp(draft.email);
+                  setOtpInfo("Đã gửi lại OTP. Vui lòng kiểm tra email.");
+                } catch (error) {
+                  setOtpError(onboardingErrorMessage(error, "Không thể gửi lại OTP."));
+                } finally {
+                  setSendingOtp(false);
+                }
+              }}
+              className="font-bold text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {sendingOtp ? "Đang gửi..." : "Gửi lại mã"}
             </button>
           </p>
           <div className="grid w-full max-w-md grid-cols-1 gap-4 md:grid-cols-2">
@@ -309,85 +898,361 @@ export default function HostOnboardingPage() {
 
   /* ---------- Step 3 — form + sidebar Stitch ---------- */
   if (current === 3) {
+    const nameDefaults = legacyDraftNameDefaults(draft);
     return (
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-slate-900">Thông tin cá nhân</h1>
-            <p className="max-w-lg text-slate-600">
-              Vui lòng cung cấp chính xác thông tin định danh của chủ không gian hoặc người đại diện pháp luật.
+        <div className="mb-5">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Thông tin cá nhân</h1>
+          {otpError ? <p className="mt-2 text-sm font-medium text-red-600">{otpError}</p> : null}
+          {showApiErrOutsideStep(HOST_ONBOARD_STEP3_ERR_KEYS) ? (
+            <p className="mt-2 text-xs text-amber-800">
+              Có lỗi từ bước Doanh nghiệp hoặc Ngân hàng — sửa các ô tương ứng ở các bước đó (viền đỏ).
             </p>
-          </div>
-          <div className="hidden text-right md:block">
-            <span className="mb-1 block text-sm font-bold text-primary">Tiến độ: ~43%</span>
-            <div className="h-2 w-32 overflow-hidden rounded-full bg-primary/10">
-              <div className="h-full w-[43%] rounded-full bg-primary" />
-            </div>
-          </div>
+          ) : null}
         </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <div className="space-y-8 lg:col-span-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-5 lg:col-span-8">
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
-                patchDraft({
-                  fullName: fd.get("fullName"),
+                const frontIdFile = fd.get("representativeFrontFile");
+                const backIdFile = fd.get("representativeBackFile");
+                const username = fd.get("username")?.trim();
+                const lastName = fd.get("lastName")?.trim();
+                const firstName = fd.get("firstName")?.trim();
+                const fullName = [lastName, firstName].filter(Boolean).join(" ").trim();
+                const payload = {
+                  username,
+                  lastName,
+                  firstName,
+                  fullName,
                   phone: fd.get("phone"),
                   idNumber: fd.get("idNumber"),
-                });
-                go(4);
+                };
+                setOtpError("");
+                const clientErrs = {};
+                const eu = validateHostUsername(username);
+                if (eu) clientErrs.username = eu;
+                const eln = validateVietnameseNamePart(lastName, "Họ");
+                if (eln) clientErrs.lastName = eln;
+                const efn = validateVietnameseNamePart(firstName, "Tên đệm và tên");
+                if (efn) clientErrs.firstName = efn;
+                const ep = validateVietnamPhone(fd.get("phone"));
+                if (ep) clientErrs.phone = ep;
+                const eid = validateCitizenIdNumber(fd.get("idNumber"));
+                if (eid) clientErrs.idNumber = eid;
+                const eFront = validateIdCardImageFile(frontIdFile instanceof File ? frontIdFile : null);
+                if (eFront) clientErrs.representativeFront = eFront;
+                const eBack = validateIdCardImageFile(backIdFile instanceof File ? backIdFile : null);
+                if (eBack) clientErrs.representativeBack = eBack;
+                setStep3FieldErrors(clientErrs);
+                if (Object.keys(clientErrs).length > 0) {
+                  setOtpError("Vui lòng sửa các trường chưa hợp lệ (viền đỏ).");
+                  return;
+                }
+                const merged = { ...draft, ...payload };
+                const files = {
+                  ...registerDraftFiles,
+                  representativeFront: frontIdFile,
+                  representativeBack: backIdFile,
+                };
+                try {
+                  await saveDraftToApi(buildRegisterDraftApiPayload(merged, files));
+                  patchDraft(payload);
+                  setRegisterDraftFiles((prev) => ({
+                    ...prev,
+                    representativeFront: frontIdFile,
+                    representativeBack: backIdFile,
+                  }));
+                  setApiFieldErrors({});
+                  setStep3FieldErrors({});
+                  setOtpError("");
+                  go(4);
+                } catch (error) {
+                  applyDraftApiCatch(error, "Không thể lưu bước thông tin cá nhân. Vui lòng kiểm tra lại.");
+                }
               }}
-              className="space-y-8"
+              className="space-y-5"
             >
-              <section className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-sm md:p-8">
-                <h3 className="mb-6 flex items-center gap-2 text-lg font-bold text-slate-900">
-                  <span className="material-symbols-outlined text-primary">badge</span>
-                  Thông tin định danh
-                </h3>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div className="md:col-span-2">
-                    <label className="mb-2 block text-sm font-semibold text-slate-600">Họ &amp; tên</label>
-                    <input name="fullName" required defaultValue={draft.fullName || ""} className={inputField} placeholder="Nhập đầy đủ họ và tên" />
-                  </div>
+              <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] md:p-6">
+                <div className="space-y-5">
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-600">Số điện thoại</label>
-                    <input name="phone" required defaultValue={draft.phone || ""} className={inputField} placeholder="0xxx xxx xxx" />
+                    <label htmlFor="host-reg-username" className={`${fieldLabel} mb-1.5 block`}>
+                      Tên đăng nhập
+                    </label>
+                    <input
+                      id="host-reg-username"
+                      name="username"
+                      required
+                      minLength={3}
+                      maxLength={64}
+                      autoComplete="username"
+                      defaultValue={draft.username || ""}
+                      className={inpClsStep3("username")}
+                      placeholder="VD: nguyenvanan hoặc email@domain.com"
+                      {...bindStep3ValidatedInput("username", validateHostUsername)}
+                    />
+                    {step3Msg("username") ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("username")}</p>
+                    ) : null}
                   </div>
+
+                  <div className="h-px bg-slate-100" aria-hidden />
+
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-600">CCCD / CMND</label>
-                    <input name="idNumber" required defaultValue={draft.idNumber || ""} className={inputField} placeholder="12 chữ số" />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="host-reg-lastname" className={fieldLabel}>
+                          Họ
+                        </label>
+                        <input
+                          id="host-reg-lastname"
+                          name="lastName"
+                          required
+                          autoComplete="family-name"
+                          defaultValue={nameDefaults.lastName}
+                          className={inpClsStep3("lastName", "mt-1.5")}
+                          placeholder="Ví dụ: Nguyễn"
+                          {...bindStep3ValidatedInput("lastName", (v) => validateVietnameseNamePart(v, "Họ"))}
+                        />
+                        {step3Msg("lastName") ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("lastName")}</p>
+                        ) : null}
+                      </div>
+                      <div>
+                        <label htmlFor="host-reg-firstname" className={fieldLabel}>
+                          Tên đệm và tên
+                        </label>
+                        <input
+                          id="host-reg-firstname"
+                          name="firstName"
+                          required
+                          autoComplete="given-name"
+                          defaultValue={nameDefaults.firstName}
+                          className={inpClsStep3("firstName", "mt-1.5")}
+                          placeholder="Ví dụ: Văn An"
+                          {...bindStep3ValidatedInput("firstName", (v) => validateVietnameseNamePart(v, "Tên đệm và tên"))}
+                        />
+                        {step3Msg("firstName") ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("firstName")}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-slate-100" aria-hidden />
+
+                  <div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="host-reg-phone" className={fieldLabel}>
+                          Số điện thoại
+                        </label>
+                        <input
+                          id="host-reg-phone"
+                          name="phone"
+                          required
+                          autoComplete="tel"
+                          defaultValue={draft.phone || ""}
+                          className={inpClsStep3("phone", "mt-1.5")}
+                          placeholder="0xxx xxx xxx hoặc +84…"
+                          {...bindStep3ValidatedInput("phone", validateVietnamPhone)}
+                        />
+                        {step3Msg("phone") ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("phone")}</p>
+                        ) : null}
+                      </div>
+                      <div>
+                        <label htmlFor="host-reg-id" className={fieldLabel}>
+                          Số CCCD / CMND
+                        </label>
+                        <input
+                          id="host-reg-id"
+                          name="idNumber"
+                          required
+                          inputMode="numeric"
+                          autoComplete="off"
+                          defaultValue={draft.idNumber || ""}
+                          className={inpClsStep3("idNumber", "mt-1.5")}
+                          placeholder="9 số (CMND) hoặc 12 số (CCCD)"
+                          {...bindStep3ValidatedInput("idNumber", validateCitizenIdNumber)}
+                        />
+                        {step3Msg("idNumber") ? (
+                          <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("idNumber")}</p>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>
 
-              <section className="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center">
-                <span className="material-symbols-outlined text-4xl text-primary/40">add_a_photo</span>
-                <p className="mt-2 text-sm font-bold text-slate-600">Tải ảnh CCCD (bản demo — bỏ qua)</p>
-                <p className="mt-1 text-xs text-slate-500">JPG, PNG tối đa 5MB</p>
+              <section className="rounded-2xl border-2 border-dashed border-slate-200/90 bg-gradient-to-b from-white to-slate-50/80 p-5 md:p-6">
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <span className="material-symbols-outlined text-[24px]">add_a_photo</span>
+                  </span>
+                  <div className="min-w-0">
+                    <h4 className="text-base font-bold text-slate-900">Ảnh CCCD / CMND</h4>
+                    <p className="mt-0.5 text-xs text-slate-500">JPG, PNG, WebP · tối đa 5MB</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-end justify-between gap-2">
+                      <span className={fieldLabel}>Mặt trước</span>
+                    </div>
+                    <input
+                      ref={idFrontInputRef}
+                      id="host-reg-id-front"
+                      name="representativeFrontFile"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      required
+                      onChange={onIdFrontFileChange}
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-label="Tệp ảnh mặt trước CCCD"
+                    />
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Ảnh mặt trước CCCD"
+                      onClick={() => idFrontInputRef.current?.click()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          idFrontInputRef.current?.click();
+                        }
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDrop={onIdFrontDrop}
+                      className={`relative w-full cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${
+                        step3Msg("representativeFront")
+                          ? "border-red-500 bg-red-50/40"
+                          : idFrontPreviewUrl
+                            ? "border-slate-200 bg-slate-100/90"
+                            : "border-slate-200 bg-slate-50/90 hover:border-primary/40 hover:bg-primary/[0.03]"
+                      }`}
+                    >
+                      <div className="relative aspect-[85.6/54] w-full">
+                        {idFrontPreviewUrl ? (
+                          <img
+                            src={idFrontPreviewUrl}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-contain p-2"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-4 text-center">
+                            <span className="material-symbols-outlined text-3xl text-slate-400">id_card</span>
+                            <p className="text-sm font-medium text-slate-600">Chọn ảnh</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {idFrontFileLabel ? (
+                      <p className="truncate text-xs text-slate-500" title={idFrontFileLabel}>
+                        {idFrontFileLabel}
+                      </p>
+                    ) : null}
+                    {step3Msg("representativeFront") ? (
+                      <p className="text-xs font-medium text-red-600">{step3Msg("representativeFront")}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-end justify-between gap-2">
+                      <span className={fieldLabel}>Mặt sau</span>
+                    </div>
+                    <input
+                      ref={idBackInputRef}
+                      id="host-reg-id-back"
+                      name="representativeBackFile"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      required
+                      onChange={onIdBackFileChange}
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-label="Tệp ảnh mặt sau CCCD"
+                    />
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Ảnh mặt sau CCCD"
+                      onClick={() => idBackInputRef.current?.click()}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          idBackInputRef.current?.click();
+                        }
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      onDrop={onIdBackDrop}
+                      className={`relative w-full cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${
+                        step3Msg("representativeBack")
+                          ? "border-red-500 bg-red-50/40"
+                          : idBackPreviewUrl
+                            ? "border-slate-200 bg-slate-100/90"
+                            : "border-slate-200 bg-slate-50/90 hover:border-primary/40 hover:bg-primary/[0.03]"
+                      }`}
+                    >
+                      <div className="relative aspect-[85.6/54] w-full">
+                        {idBackPreviewUrl ? (
+                          <img
+                            src={idBackPreviewUrl}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-contain p-2"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-4 text-center">
+                            <span className="material-symbols-outlined text-3xl text-slate-400">flip</span>
+                            <p className="text-sm font-medium text-slate-600">Chọn ảnh</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {idBackFileLabel ? (
+                      <p className="truncate text-xs text-slate-500" title={idBackFileLabel}>
+                        {idBackFileLabel}
+                      </p>
+                    ) : null}
+                    {step3Msg("representativeBack") ? (
+                      <p className="text-xs font-medium text-red-600">{step3Msg("representativeBack")}</p>
+                    ) : null}
+                  </div>
+                </div>
               </section>
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center justify-between pt-1">
                 <button type="button" onClick={() => go(2)} className="flex items-center gap-2 font-bold text-slate-500 hover:text-primary">
                   <span className="material-symbols-outlined text-sm">arrow_back_ios</span>
                   Quay lại
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center gap-3 rounded-xl bg-primary px-10 py-4 font-bold text-white shadow-lg shadow-primary/20 transition hover:scale-[1.02] active:scale-95"
+                  disabled={savingDraft}
+                  className="flex items-center gap-3 rounded-xl bg-primary px-10 py-4 font-bold text-white shadow-lg shadow-primary/20 transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  Tiếp tục
+                  {savingDraft ? "Đang lưu…" : "Tiếp tục"}
                   <span className="material-symbols-outlined text-sm">arrow_forward_ios</span>
                 </button>
               </div>
             </form>
           </div>
 
-          <div className="space-y-6 lg:col-span-4">
-            <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h4 className="mb-4 font-bold text-primary">Tại sao cần thông tin này?</h4>
-              <ul className="space-y-4">
+          <div className="space-y-5 lg:col-span-4">
+            <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h4 className="mb-3 font-bold text-primary">Tại sao cần thông tin này?</h4>
+              <ul className="space-y-3">
                 <li className="flex gap-3">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
                     <span className="material-symbols-outlined text-sm text-emerald-600" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -426,118 +1291,587 @@ export default function HostOnboardingPage() {
     );
   }
 
-  /* ---------- Step 4 ---------- */
+  /* ---------- Step 4 — cùng rhythm UI với bước 3 ---------- */
   if (current === 4) {
     return (
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-extrabold text-slate-900">Thông tin doanh nghiệp</h1>
-          <p className="text-slate-600">Khai báo nếu bạn cho thuê với tư cách công ty / hộ kinh doanh.</p>
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-5">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Thông tin doanh nghiệp</h1>
+          <p className="mt-1 text-sm text-slate-600">Khai báo khi bạn cho thuê với tư cách công ty hoặc hộ kinh doanh.</p>
+          {otpError ? <p className="mt-2 text-sm font-medium text-red-600">{otpError}</p> : null}
+          {showApiErrOutsideStep(HOST_ONBOARD_STEP4_ERR_KEYS) ? (
+            <p className="mt-2 text-xs text-amber-800">
+              Có lỗi ở bước Thông tin cá nhân hoặc Ngân hàng — dùng Quay lại hoặc xem ô viền đỏ ở các bước đó.
+            </p>
+          ) : null}
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const fd = new FormData(e.target);
-            patchDraft({
-              companyName: fd.get("companyName"),
-              taxCode: fd.get("taxCode"),
-              companyAddress: fd.get("companyAddress"),
-            });
-            go(5);
-          }}
-          className="space-y-6"
-        >
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-            <h3 className="mb-6 flex items-center gap-2 font-bold text-slate-900">
-              <span className="material-symbols-outlined text-primary">storefront</span>
-              Doanh nghiệp
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-600">Tên doanh nghiệp</label>
-                <input name="companyName" required defaultValue={draft.companyName || ""} className={inputField} />
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-5 lg:col-span-8">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const companyRegistrationFile = fd.get("companyRegistrationFile");
+                const brandAvatarFile = fd.get("brandAvatarFile");
+                const payload = {
+                  companyName: fd.get("companyName"),
+                  taxCode: fd.get("taxCode"),
+                  brandName: fd.get("brandName"),
+                  district: fd.get("district"),
+                  ward: fd.get("ward"),
+                  companyAddress: fd.get("companyAddress"),
+                };
+                const nextCo =
+                  companyRegistrationFile instanceof File && companyRegistrationFile.size > 0
+                    ? companyRegistrationFile
+                    : registerDraftFiles.companyRegistration;
+                const nextAvatar =
+                  brandAvatarFile instanceof File && brandAvatarFile.size > 0 ? brandAvatarFile : registerDraftFiles.brandAvatar;
+                setOtpError("");
+                if (!(nextCo instanceof File) || nextCo.size <= 0) {
+                  setOtpError("Vui lòng tải giấy phép kinh doanh.");
+                  return;
+                }
+                if (!(nextAvatar instanceof File) || nextAvatar.size <= 0) {
+                  setOtpError("Vui lòng tải avatar thương hiệu.");
+                  return;
+                }
+                const merged = { ...draft, ...payload };
+                const nextFiles = {
+                  ...registerDraftFiles,
+                  companyRegistration: nextCo,
+                  brandAvatar: nextAvatar,
+                };
+                try {
+                  await saveDraftToApi(buildRegisterDraftApiPayload(merged, nextFiles));
+                  patchDraft(payload);
+                  setRegisterDraftFiles((prev) => ({
+                    ...prev,
+                    companyRegistration: nextCo,
+                    brandAvatar: nextAvatar,
+                  }));
+                  setApiFieldErrors({});
+                  setOtpError("");
+                  go(5);
+                } catch (error) {
+                  applyDraftApiCatch(error, "Không thể lưu bước doanh nghiệp. Vui lòng kiểm tra lại.");
+                }
+              }}
+              className="space-y-5"
+            >
+              <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] md:p-6">
+                <div className="space-y-5">
+                  <div>
+                    <label htmlFor="host-step4-company" className={`${fieldLabel} mb-1.5 block`}>
+                      Tên doanh nghiệp
+                    </label>
+                    <input
+                      id="host-step4-company"
+                      name="companyName"
+                      required
+                      autoComplete="organization"
+                      defaultValue={draft.companyName || ""}
+                      className={inpCls("companyName")}
+                      placeholder="Tên trên giấy đăng ký"
+                      onInput={() => clearApiField("companyName")}
+                    />
+                    {apiFieldErrors.companyName ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.companyName}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="h-px bg-slate-100" aria-hidden />
+
+                  <div>
+                    <label htmlFor="host-step4-tax" className={`${fieldLabel} mb-1.5 block`}>
+                      Mã số thuế
+                    </label>
+                    <input
+                      id="host-step4-tax"
+                      name="taxCode"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      defaultValue={draft.taxCode || ""}
+                      className={inpCls("taxCode")}
+                      placeholder="Để trống nếu chưa có"
+                      onInput={() => clearApiField("taxCode")}
+                    />
+                    {apiFieldErrors.taxCode ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.taxCode}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="h-px bg-slate-100" aria-hidden />
+
+                  <div>
+                    <label htmlFor="host-step4-brand" className={`${fieldLabel} mb-1.5 block`}>
+                      Tên thương hiệu
+                    </label>
+                    <input
+                      id="host-step4-brand"
+                      name="brandName"
+                      required
+                      defaultValue={draft.brandName || ""}
+                      className={inpCls("brandName")}
+                      placeholder="Tên hiển thị với khách"
+                      onInput={() => clearApiField("brandName")}
+                    />
+                    {apiFieldErrors.brandName ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.brandName}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="h-px bg-slate-100" aria-hidden />
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="host-step4-district" className={fieldLabel}>
+                        Quận / Huyện
+                      </label>
+                      <input
+                        id="host-step4-district"
+                        name="district"
+                        required
+                        defaultValue={draft.district || ""}
+                        className={inpCls("district", "mt-1.5")}
+                        onInput={() => clearApiField("district")}
+                      />
+                      {apiFieldErrors.district ? (
+                        <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.district}</p>
+                      ) : null}
+                    </div>
+                    <div>
+                      <label htmlFor="host-step4-ward" className={fieldLabel}>
+                        Phường / Xã
+                      </label>
+                      <input
+                        id="host-step4-ward"
+                        name="ward"
+                        required
+                        defaultValue={draft.ward || ""}
+                        className={inpCls("ward", "mt-1.5")}
+                        onInput={() => clearApiField("ward")}
+                      />
+                      {apiFieldErrors.ward ? (
+                        <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.ward}</p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-slate-100" aria-hidden />
+
+                  <div>
+                    <label htmlFor="host-step4-address" className={`${fieldLabel} mb-1.5 block`}>
+                      Địa chỉ trụ sở
+                    </label>
+                    <textarea
+                      id="host-step4-address"
+                      name="companyAddress"
+                      required
+                      rows={3}
+                      defaultValue={draft.companyAddress || ""}
+                      className={inpCls("companyAddress")}
+                      placeholder="Số nhà, đường, tòa nhà…"
+                      onInput={() => clearApiField("companyAddress")}
+                    />
+                    {apiFieldErrors.companyAddress ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.companyAddress}</p>
+                    ) : null}
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-2xl border-2 border-dashed border-slate-200/90 bg-gradient-to-b from-white to-slate-50/80 p-5 md:p-6">
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <span className="material-symbols-outlined text-[24px]">folder_special</span>
+                  </span>
+                  <div className="min-w-0">
+                    <h4 className="text-base font-bold text-slate-900">Giấy phép &amp; hình ảnh thương hiệu</h4>
+                    <p className="mt-0.5 text-xs text-slate-500">GPKD: ảnh hoặc PDF · Avatar: JPG, PNG, WebP</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                  <div className="flex flex-col gap-2">
+                    <span className={fieldLabel}>Giấy phép kinh doanh</span>
+                    <input
+                      ref={companyRegInputRef}
+                      id="host-step4-gpkd"
+                      name="companyRegistrationFile"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      onChange={onCompanyRegFileChange}
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-label="Tệp giấy phép kinh doanh"
+                    />
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Tải giấy phép kinh doanh"
+                      onClick={() => companyRegInputRef.current?.click()}
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter" || ev.key === " ") {
+                          ev.preventDefault();
+                          companyRegInputRef.current?.click();
+                        }
+                      }}
+                      onDragOver={(ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                      }}
+                      onDrop={onCompanyRegDrop}
+                      className={`relative w-full cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${
+                        apiFieldErrors.companyRegistration
+                          ? "border-red-500 bg-red-50/40"
+                          : companyRegPreviewUrl || companyRegIsPdf
+                            ? "border-slate-200 bg-slate-100/90"
+                            : "border-slate-200 bg-slate-50/90 hover:border-primary/40 hover:bg-primary/[0.03]"
+                      }`}
+                    >
+                      <div className="relative aspect-[4/3] w-full min-h-[140px]">
+                        {companyRegPreviewUrl ? (
+                          <img
+                            src={companyRegPreviewUrl}
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-contain p-2"
+                          />
+                        ) : companyRegIsPdf ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
+                            <span className="material-symbols-outlined text-4xl text-red-500">picture_as_pdf</span>
+                            <p className="text-sm font-medium text-slate-600">Đã chọn PDF</p>
+                          </div>
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-4 text-center">
+                            <span className="material-symbols-outlined text-3xl text-slate-400">description</span>
+                            <p className="text-sm font-medium text-slate-600">Chọn hoặc kéo thả</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {companyRegFileLabel ? (
+                      <p className="truncate text-xs text-slate-500" title={companyRegFileLabel}>
+                        {companyRegFileLabel}
+                      </p>
+                    ) : null}
+                    {apiFieldErrors.companyRegistration ? (
+                      <p className="text-xs font-medium text-red-600">{apiFieldErrors.companyRegistration}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className={fieldLabel}>Avatar thương hiệu</span>
+                    <input
+                      ref={brandAvatarInputRef}
+                      id="host-step4-avatar"
+                      name="brandAvatarFile"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={onBrandAvatarFileChange}
+                      className="sr-only"
+                      tabIndex={-1}
+                      aria-label="Tệp avatar thương hiệu"
+                    />
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Tải avatar thương hiệu"
+                      onClick={() => brandAvatarInputRef.current?.click()}
+                      onKeyDown={(ev) => {
+                        if (ev.key === "Enter" || ev.key === " ") {
+                          ev.preventDefault();
+                          brandAvatarInputRef.current?.click();
+                        }
+                      }}
+                      onDragOver={(ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                      }}
+                      onDrop={onBrandAvatarDrop}
+                      className={`relative w-full cursor-pointer overflow-hidden rounded-2xl border-2 border-dashed transition-colors ${
+                        apiFieldErrors.brandAvatar
+                          ? "border-red-500 bg-red-50/40"
+                          : brandAvatarPreviewUrl
+                            ? "border-slate-200 bg-slate-100/90"
+                            : "border-slate-200 bg-slate-50/90 hover:border-primary/40 hover:bg-primary/[0.03]"
+                      }`}
+                    >
+                      <div className="relative aspect-square max-h-[200px] w-full max-w-[200px] mx-auto">
+                        {brandAvatarPreviewUrl ? (
+                          <img
+                            src={brandAvatarPreviewUrl}
+                            alt=""
+                            className="absolute inset-0 h-full w-full rounded-2xl object-cover p-1"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-4 text-center">
+                            <span className="material-symbols-outlined text-3xl text-slate-400">add_a_photo</span>
+                            <p className="text-sm font-medium text-slate-600">Chọn ảnh logo</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {brandAvatarFileLabel ? (
+                      <p className="truncate text-xs text-slate-500" title={brandAvatarFileLabel}>
+                        {brandAvatarFileLabel}
+                      </p>
+                    ) : null}
+                    {apiFieldErrors.brandAvatar ? (
+                      <p className="text-xs font-medium text-red-600">{apiFieldErrors.brandAvatar}</p>
+                    ) : null}
+                  </div>
+                </div>
+              </section>
+
+              <div className="flex items-center justify-between pt-1">
+                <button type="button" onClick={() => go(3)} className="flex items-center gap-2 font-bold text-slate-500 hover:text-primary">
+                  <span className="material-symbols-outlined text-sm">arrow_back_ios</span>
+                  Quay lại
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingDraft}
+                  className="flex items-center gap-3 rounded-xl bg-primary px-10 py-4 font-bold text-white shadow-lg shadow-primary/20 transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+                >
+                  {savingDraft ? "Đang lưu…" : "Tiếp tục"}
+                  <span className="material-symbols-outlined text-sm">arrow_forward_ios</span>
+                </button>
               </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-600">Mã số thuế</label>
-                <input name="taxCode" defaultValue={draft.taxCode || ""} className={inputField} />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-600">Địa chỉ trụ sở</label>
-                <textarea name="companyAddress" rows={3} defaultValue={draft.companyAddress || ""} className={inputField} />
+            </form>
+          </div>
+
+          <div className="space-y-5 lg:col-span-4">
+            <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h4 className="mb-3 font-bold text-primary">Vì sao cần thông tin doanh nghiệp?</h4>
+              <ul className="space-y-3">
+                <li className="flex gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                    <span className="material-symbols-outlined text-sm text-emerald-600" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      gavel
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600">Hồ sơ pháp lý giúp BoxHub xác minh bạn là đơn vị kinh doanh hợp lệ.</p>
+                </li>
+                <li className="flex gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <span className="material-symbols-outlined text-sm text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      storefront
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600">Thương hiệu và avatar hiển thị thống nhất trên nền tảng.</p>
+                </li>
+                <li className="flex gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+                    <span className="material-symbols-outlined text-sm text-amber-600" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      map
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600">Địa chỉ trụ sở dùng cho hợp đồng và liên hệ chính thức.</p>
+                </li>
+              </ul>
+              <div className="relative mt-8 overflow-hidden rounded-xl">
+                <img src={IMG_OFFICE_SIDEBAR} alt="" className="h-40 w-full object-cover" />
+                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-primary/80 to-transparent p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white">Trust &amp; Security</p>
+                </div>
               </div>
             </div>
-          </section>
-          <div className="flex justify-between">
-            <button type="button" onClick={() => go(3)} className="font-bold text-slate-500 hover:text-primary">
-              ← Quay lại
-            </button>
-            <button type="submit" className="rounded-xl bg-primary px-8 py-3 font-bold text-white shadow-md">
-              Tiếp tục
-            </button>
           </div>
-        </form>
+        </div>
       </div>
     );
   }
 
-  /* ---------- Step 5 ---------- */
+  /* ---------- Step 5 — bank_name, account_number, account_name, payment_method (chuỗi) ---------- */
   if (current === 5) {
     return (
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-extrabold text-slate-900">Liên kết ngân hàng</h1>
-          <p className="text-slate-600">Nhận thanh toán an toàn — thông tin được mã hóa.</p>
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-5">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Liên kết ngân hàng</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Thanh toán định kỳ được chuyển về tài khoản bạn khai báo — toàn bộ là thông tin dạng chữ, không tải file.
+          </p>
+          {otpError ? <p className="mt-2 text-sm font-medium text-red-600">{otpError}</p> : null}
+          {showApiErrOutsideStep(HOST_ONBOARD_STEP5_ERR_KEYS) ? (
+            <p className="mt-2 text-xs text-amber-800">
+              Có lỗi ở bước trước — dùng Quay lại để sửa các ô viền đỏ (ví dụ mã số thuế, CCCD).
+            </p>
+          ) : null}
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const fd = new FormData(e.target);
-            patchDraft({
-              bankName: fd.get("bankName"),
-              bankAccount: fd.get("bankAccount"),
-              bankHolder: fd.get("bankHolder"),
-            });
-            go(6);
-          }}
-          className="space-y-6"
-        >
-          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-            <div className="chart-gradient mb-6 rounded-xl bg-gradient-to-b from-primary/5 to-transparent p-4">
-              <p className="text-sm font-medium text-slate-600">Số dư dự kiến sẽ được chuyển vào tài khoản này sau mỗi giao dịch.</p>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-semibold">Ngân hàng</label>
-                <select
-                  name="bankName"
-                  defaultValue={draft.bankName || "Vietcombank"}
-                  className={inputField}
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-5 lg:col-span-8">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const payload = {
+                  bankName: fd.get("bankName"),
+                  bankAccount: fd.get("bankAccount"),
+                  bankHolder: fd.get("bankHolder"),
+                  paymentMethod: fd.get("paymentMethod"),
+                };
+                patchDraft(payload);
+                const merged = { ...draft, ...payload };
+                const ok = await submitFullRegisterDraft(merged, registerDraftFiles);
+                if (!ok) return;
+                go(6);
+              }}
+              className="space-y-5"
+            >
+              <section className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)] md:p-6">
+                <div className="mb-5 rounded-xl bg-gradient-to-b from-primary/5 to-transparent p-4">
+                  <p className="text-sm font-medium text-slate-600">
+                    Số dư dự kiến sẽ được chuyển vào tài khoản này sau mỗi giao dịch.
+                  </p>
+                </div>
+                <div className="space-y-5">
+                  <div>
+                    <label htmlFor="host-step5-bank" className={`${fieldLabel} mb-1.5 block`}>
+                      Tên ngân hàng
+                    </label>
+                    <select
+                      id="host-step5-bank"
+                      name="bankName"
+                      required
+                      defaultValue={draft.bankName || "Vietcombank"}
+                      className={inpCls("bankName")}
+                      onChange={() => clearApiField("bankName")}
+                    >
+                      <option>Vietcombank</option>
+                      <option>Techcombank</option>
+                      <option>MB Bank</option>
+                      <option>VPBank</option>
+                    </select>
+                    {apiFieldErrors.bankName ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.bankName}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="h-px bg-slate-100" aria-hidden />
+
+                  <div>
+                    <label htmlFor="host-step5-account" className={`${fieldLabel} mb-1.5 block`}>
+                      Số tài khoản
+                    </label>
+                    <input
+                      id="host-step5-account"
+                      name="bankAccount"
+                      required
+                      inputMode="numeric"
+                      autoComplete="off"
+                      defaultValue={draft.bankAccount || ""}
+                      className={inpCls("bankAccount")}
+                      placeholder="Chỉ số, không dấu cách"
+                      onInput={() => clearApiField("bankAccount")}
+                    />
+                    {apiFieldErrors.bankAccount ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.bankAccount}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="h-px bg-slate-100" aria-hidden />
+
+                  <div>
+                    <label htmlFor="host-step5-holder" className={`${fieldLabel} mb-1.5 block`}>
+                      Tên chủ tài khoản
+                    </label>
+                    <input
+                      id="host-step5-holder"
+                      name="bankHolder"
+                      required
+                      autoComplete="name"
+                      defaultValue={draft.bankHolder || draft.fullName || ""}
+                      className={inpCls("bankHolder")}
+                      placeholder="Trùng khớp tên trên thẻ / sổ tiết kiệm"
+                      onInput={() => clearApiField("bankHolder")}
+                    />
+                    {apiFieldErrors.bankHolder ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.bankHolder}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="h-px bg-slate-100" aria-hidden />
+
+                  <div>
+                    <label htmlFor="host-step5-payment" className={`${fieldLabel} mb-1.5 block`}>
+                      Phương thức thanh toán
+                    </label>
+                    <select
+                      id="host-step5-payment"
+                      name="paymentMethod"
+                      required
+                      defaultValue={draft.paymentMethod || "BankTransfer"}
+                      className={inpCls("paymentMethod")}
+                      onChange={() => clearApiField("paymentMethod")}
+                    >
+                      <option value="BankTransfer">Chuyển khoản ngân hàng</option>
+                      <option value="ManualSettlement">Quyết toán thủ công</option>
+                    </select>
+                    {apiFieldErrors.paymentMethod ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.paymentMethod}</p>
+                    ) : null}
+                  </div>
+                </div>
+              </section>
+
+              <div className="flex items-center justify-between pt-1">
+                <button type="button" onClick={() => go(4)} className="flex items-center gap-2 font-bold text-slate-500 hover:text-primary">
+                  <span className="material-symbols-outlined text-sm">arrow_back_ios</span>
+                  Quay lại
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingDraft}
+                  className="flex items-center gap-3 rounded-xl bg-primary px-10 py-4 font-bold text-white shadow-lg shadow-primary/20 transition hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  <option>Vietcombank</option>
-                  <option>Techcombank</option>
-                  <option>MB Bank</option>
-                  <option>VPBank</option>
-                </select>
+                  {savingDraft ? "Đang gửi hồ sơ..." : "Gửi hồ sơ & tiếp tục"}
+                  {!savingDraft ? <span className="material-symbols-outlined text-sm">arrow_forward_ios</span> : null}
+                </button>
               </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold">Số tài khoản</label>
-                <input name="bankAccount" required defaultValue={draft.bankAccount || ""} className={inputField} />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold">Tên chủ tài khoản</label>
-                <input name="bankHolder" required defaultValue={draft.bankHolder || draft.fullName || ""} className={inputField} />
+            </form>
+          </div>
+
+          <div className="space-y-5 lg:col-span-4">
+            <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h4 className="mb-3 font-bold text-primary">Vì sao cần tài khoản ngân hàng?</h4>
+              <ul className="space-y-3">
+                <li className="flex gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                    <span className="material-symbols-outlined text-sm text-emerald-600" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      payments
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600">Tiền thuê được chuyển thẳng vào tài khoản bạn đăng ký.</p>
+                </li>
+                <li className="flex gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                    <span className="material-symbols-outlined text-sm text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      shield_lock
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600">Thông tin được truyền qua kênh bảo mật, không lưu mật khẩu ngân hàng.</p>
+                </li>
+                <li className="flex gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+                    <span className="material-symbols-outlined text-sm text-amber-600" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      edit_document
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600">Bạn có thể cập nhật sau khi được duyệt host, theo quy định nền tảng.</p>
+                </li>
+              </ul>
+              <div className="relative mt-8 overflow-hidden rounded-xl">
+                <img src={IMG_OFFICE_SIDEBAR} alt="" className="h-40 w-full object-cover" />
+                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-primary/80 to-transparent p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-white">Trust &amp; Security</p>
+                </div>
               </div>
             </div>
-          </section>
-          <div className="flex justify-between">
-            <button type="button" onClick={() => go(4)} className="font-bold text-slate-500 hover:text-primary">
-              ← Quay lại
-            </button>
-            <button type="submit" className="rounded-xl bg-primary px-8 py-3 font-bold text-white shadow-md">
-              Tiếp tục
-            </button>
           </div>
-        </form>
+        </div>
       </div>
     );
   }
@@ -551,9 +1885,9 @@ export default function HostOnboardingPage() {
         </div>
         <h1 className="mb-4 text-3xl font-extrabold text-slate-900">Hồ sơ đang được xem xét</h1>
         <p className="mb-10 max-w-lg text-lg text-slate-600">
-          BoxHub thường phản hồi trong <strong className="text-primary">24–48 giờ</strong>. Bạn sẽ nhận email khi được duyệt. Demo: nhấn nút bên dưới để
-          mô phỏng đã duyệt.
+          BoxHub thường phản hồi trong <strong className="text-primary">24–48 giờ</strong>. Bạn sẽ nhận email khi được duyệt.
         </p>
+        {otpError ? <p className="mb-4 text-sm font-medium text-red-600">{otpError}</p> : null}
         <div className="flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
@@ -564,10 +1898,34 @@ export default function HostOnboardingPage() {
           </button>
           <button
             type="button"
-            onClick={() => go(7)}
+            onClick={async () => {
+              setCheckingStatus(true);
+              setOtpError("");
+              try {
+                const { draftId, token } = getRegisterCredentials();
+                const data = await getHostRegisterDraft({ draftId, token });
+                const verifiedStatus = String(
+                  data?.verifiedStatus || data?.hostProfile?.verifiedStatus || data?.status || ""
+                ).toLowerCase();
+                if (verifiedStatus.includes("approved") || verifiedStatus.includes("active")) {
+                  go(7);
+                  return;
+                }
+                if (verifiedStatus.includes("rejected")) {
+                  setOtpError(data?.rejectReason || data?.hostProfile?.rejectReason || "Hồ sơ đã bị từ chối. Vui lòng cập nhật lại thông tin.");
+                  return;
+                }
+                setOtpError("Hồ sơ chưa được duyệt. Vui lòng thử lại sau.");
+              } catch (error) {
+                setOtpError(onboardingErrorMessage(error, "Không thể kiểm tra trạng thái hồ sơ."));
+              } finally {
+                setCheckingStatus(false);
+              }
+            }}
+            disabled={checkingStatus}
             className="rounded-xl bg-primary px-10 py-4 font-bold text-white shadow-lg shadow-primary/25"
           >
-            Đã được duyệt (demo)
+            {checkingStatus ? "Đang kiểm tra..." : "Kiểm tra trạng thái duyệt"}
           </button>
         </div>
       </div>
@@ -583,6 +1941,7 @@ export default function HostOnboardingPage() {
       </div>
       <h1 className="mb-2 text-3xl font-extrabold text-slate-900">Tạo mật khẩu</h1>
       <p className="mb-8 text-slate-600">Hoàn tất để vào trang quản lý Host. Tối thiểu 8 ký tự.</p>
+      {otpError ? <p className="mb-4 text-sm font-medium text-red-600">{otpError}</p> : null}
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -590,8 +1949,20 @@ export default function HostOnboardingPage() {
           const pw = fd.get("password");
           const pw2 = fd.get("confirm");
           if (pw !== pw2 || String(pw).length < 8) return;
-          patchDraft({ passwordSet: true });
-          await finishAndEnterHost();
+          setSettingPassword(true);
+          setOtpError("");
+          try {
+            await setHostPassword({
+              newPassword: pw,
+              confirmPassword: pw2,
+            });
+            patchDraft({ passwordSet: true });
+            await finishAndEnterHost();
+          } catch (error) {
+            setOtpError(onboardingErrorMessage(error, "Không thể tạo mật khẩu."));
+          } finally {
+            setSettingPassword(false);
+          }
         }}
         className="space-y-6"
       >
@@ -631,8 +2002,8 @@ export default function HostOnboardingPage() {
           <button type="button" onClick={() => go(6)} className="flex-1 rounded-xl border border-slate-200 py-4 font-bold text-slate-600">
             Quay lại
           </button>
-          <button type="submit" className="flex-1 rounded-xl bg-primary py-4 font-bold text-white shadow-md">
-            Hoàn tất đăng ký
+          <button type="submit" disabled={settingPassword} className="flex-1 rounded-xl bg-primary py-4 font-bold text-white shadow-md disabled:opacity-50">
+            {settingPassword ? "Đang xử lý..." : "Hoàn tất đăng ký"}
           </button>
         </div>
       </form>
