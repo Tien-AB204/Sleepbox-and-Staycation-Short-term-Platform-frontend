@@ -140,7 +140,7 @@ export const extractHostRegisterFieldErrors = (err) => {
 };
 
 /** Bắt lỗi ASP.NET / Swagger (message, title, detail, errors{}). */
-const getApiErrorMessage = (err, fallback) => {
+export const getApiErrorMessage = (err, fallback) => {
   const status = err.response?.status;
   const d = err.response?.data;
 
@@ -304,3 +304,18 @@ export const setHostPassword = async ({ newPassword, confirmPassword }) => {
     throw getApiErrorMessage(err, "Thiết lập mật khẩu host thất bại");
   }
 };
+
+const hostBearer = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
+
+/** CRUD tiện ích — Swagger tag Amenity, dùng JWT host (Bearer). */
+export const hostGetAmenities = (token, params = {}) =>
+  axios.get("/amenities", { headers: hostBearer(token), params });
+
+export const hostCreateAmenity = (token, body) =>
+  axios.post("/amenities", body, { headers: hostBearer(token) });
+
+export const hostUpdateAmenity = (token, id, body) =>
+  axios.put(`/amenities/${id}`, body, { headers: hostBearer(token) });
+
+export const hostDeleteAmenity = (token, id) =>
+  axios.delete(`/amenities/${id}`, { headers: hostBearer(token) });

@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuthContext } from "../../contexts/AuthContext";
+import { adminGetUserList } from "../../services/adminService";
 
 const MAP_HCMC =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuChvR65dhyI6MU3oOTLmmIsD_uv2a-gexLz90kfov_a4H0yxcZJ_AvIdApg3gftJqJllgZJaOhYMXqBzLk9FkUG9STq5CERcWyN0u_bGv2WguODk1cHG0NwnPN8D4SjRy9R0UYO-nLsDT8S6_EgNc8VRrD39pXKM40Srjw9NciUADklLjPANc6aLFLQLv6Vv0GRiImHU9YcyaCVIwqnNBUpi7t8BiJ28JQ_pMJZRWtg4AXa5Nwf0cDVs9PFPXvCppzH-W-ukSr8a6FV";
@@ -7,13 +10,97 @@ const IMG_APPROVAL_SLEEPBOX =
 const IMG_DISPUTE_GUEST =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBAXSMZtJz-mohheMsti0rKcrwaWmuRERcImchOaZqUWZyVNjzP8yPCMNT9e4qFM78N81ioVYX6WmDP2TMFeF9sF4rWkGTEMpvMjW0LktABb4VM34KJ48Vwgme7xN8Ysc4kkjhCyEDaGrb-aQ2iVmMIgUbRYMgX4ac-UxvCxLzE0sqvDwPlaY8NR18bmxuHqillmnf9j2GFG9dj03yYmc3k_7IBb2DQ6r-wUyPm0JBZO3nSsPMDU2xrz4t45Z1bYQnkk3H4aD9L5i31";
 
+function readTotalCount(data) {
+  const d = data ?? {};
+  return Number(d.totalCount ?? d.TotalCount ?? 0) || 0;
+}
+
 export default function AdminDashboard() {
+  const { user } = useAuthContext();
+  const token = user?.token;
+  const [userTotal, setUserTotal] = useState(null);
+  const [modTotal, setModTotal] = useState(null);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [all, mods] = await Promise.all([
+          adminGetUserList(token, { PageNumber: 1, PageSize: 1 }),
+          adminGetUserList(token, { Role: "Moderator", PageNumber: 1, PageSize: 1 }),
+        ]);
+        if (!cancelled) {
+          setUserTotal(readTotalCount(all.data));
+          setModTotal(readTotalCount(mods.data));
+        }
+      } catch {
+        if (!cancelled) {
+          setUserTotal(null);
+          setModTotal(null);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const topStats = useMemo(
+    () => [
+      {
+        icon: "payments",
+        iconBg: "bg-emerald-50",
+        iconColor: "text-emerald-600",
+        badge: "+12.5%",
+        badgeClass: "bg-emerald-50 text-emerald-600",
+        label: "Tổng doanh thu",
+        value: "2.540.000.000đ",
+      },
+      {
+        icon: "person",
+        iconBg: "bg-blue-50",
+        iconColor: "text-blue-600",
+        badge: "API",
+        badgeClass: "bg-blue-50 text-blue-600",
+        label: "Tổng người dùng",
+        value: userTotal != null ? userTotal.toLocaleString("vi-VN") : "—",
+        sub: modTotal != null ? `${modTotal.toLocaleString("vi-VN")} moderator` : undefined,
+      },
+      {
+        icon: "bed",
+        iconBg: "bg-orange-50",
+        iconColor: "text-orange-600",
+        badge: "+8.1%",
+        badgeClass: "bg-orange-50 text-orange-600",
+        label: "Tỷ lệ lấp đầy",
+        value: "84.2%",
+      },
+      {
+        icon: "location_city",
+        iconBg: "bg-purple-50",
+        iconColor: "text-primary",
+        badge: "+15",
+        badgeClass: "bg-primary/10 text-primary",
+        label: "Tổng số tin đăng",
+        value: "1,120",
+      },
+    ],
+    [userTotal, modTotal],
+  );
+
   return (
     <main className="flex-1 p-8">
       <header className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-2xl font-bold">Tổng quan hệ thống</h2>
-          <p className="text-slate-500">Chào mừng trở lại, đây là dữ liệu mới nhất hôm nay tại TP.HCM</p>
+          <p className="text-slate-500">
+            Chào mừng trở lại. Số người dùng / moderator lấy từ{" "}
+            <Link to="/admin/users" className="font-semibold text-primary hover:underline">
+              API danh sách tài khoản
+            </Link>
+            ; các ô khác là minh hoạ UI.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
@@ -34,45 +121,7 @@ export default function AdminDashboard() {
       </header>
 
       <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[
-          {
-            icon: "payments",
-            iconBg: "bg-emerald-50",
-            iconColor: "text-emerald-600",
-            badge: "+12.5%",
-            badgeClass: "bg-emerald-50 text-emerald-600",
-            label: "Tổng doanh thu",
-            value: "2.540.000.000đ",
-          },
-          {
-            icon: "person",
-            iconBg: "bg-blue-50",
-            iconColor: "text-blue-600",
-            badge: "+4.2%",
-            badgeClass: "bg-blue-50 text-blue-600",
-            label: "Người dùng hoạt động",
-            value: "12.840",
-            sub: "9.2k Khách / 3.6k Chủ nhà",
-          },
-          {
-            icon: "bed",
-            iconBg: "bg-orange-50",
-            iconColor: "text-orange-600",
-            badge: "+8.1%",
-            badgeClass: "bg-orange-50 text-orange-600",
-            label: "Tỷ lệ lấp đầy",
-            value: "84.2%",
-          },
-          {
-            icon: "location_city",
-            iconBg: "bg-purple-50",
-            iconColor: "text-primary",
-            badge: "+15",
-            badgeClass: "bg-primary/10 text-primary",
-            label: "Tổng số tin đăng",
-            value: "1,120",
-          },
-        ].map((m) => (
+        {topStats.map((m) => (
           <div
             key={m.label}
             className="rounded-xl border border-slate-200 bg-white p-6"

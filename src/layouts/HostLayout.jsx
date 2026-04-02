@@ -8,6 +8,7 @@ const navItems = [
   { to: "/host/calendar", label: "Lịch", icon: "calendar_today" },
   { to: "/host/facilities", label: "Cơ sở", icon: "apartment" },
   { to: "/host/sleepboxes", label: "Sleepbox", icon: "inventory_2" },
+  { to: "/host/amenities", label: "Tiện ích", icon: "spa" },
   { to: "/host/pricing", label: "Giá", icon: "sell" },
   { to: "/host/staff", label: "Nhân viên", icon: "group" },
   { to: "/host/statistics", label: "Thống kê", icon: "monitoring" },

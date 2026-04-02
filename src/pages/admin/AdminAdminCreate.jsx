@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../contexts/AuthContext";
-import { adminApiError, adminRegisterModerator } from "../../services/adminService";
+import { adminApiError, adminRegisterAdmin } from "../../services/adminService";
 
 const GENDERS = [
   { value: "", label: "Chọn giới tính" },
@@ -30,7 +30,7 @@ const initialForm = {
   confirmPassword: "",
 };
 
-export default function AdminModeratorCreate() {
+export default function AdminAdminCreate() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const token = user?.token;
@@ -39,8 +39,6 @@ export default function AdminModeratorCreate() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState("");
-
-  const adminLabel = user?.email || user?.unique_name || "Admin";
 
   const passwordRules = useMemo(
     () => ({
@@ -64,29 +62,18 @@ export default function AdminModeratorCreate() {
     const email = form.email.trim().toLowerCase();
 
     if (!form.firstName.trim()) next.firstName = "Vui lòng nhập tên.";
-    if (!form.lastName.trim()) next.lastName = "Vui lòng nhập họ / tên đệm.";
-
+    if (!form.lastName.trim()) next.lastName = "Vui lòng nhập họ / đệm.";
     if (!username) next.username = "Vui lòng nhập username.";
-    else if (!/^[a-z0-9._-]{4,50}$/.test(username)) {
-      next.username = "Username: chữ thường, số, . _ - và 4–50 ký tự.";
-    }
-
+    else if (!/^[a-z0-9._-]{4,50}$/.test(username)) next.username = "Username không hợp lệ.";
     if (!email) next.email = "Vui lòng nhập email.";
     else if (!isValidEmail(email)) next.email = "Email không hợp lệ.";
-
-    if (!form.phone.trim()) next.phone = "Vui lòng nhập số điện thoại.";
-    else if (!/^[0-9]{9,15}$/.test(form.phone.replace(/\s/g, ""))) next.phone = "Số điện thoại không hợp lệ.";
-
+    if (!form.phone.trim()) next.phone = "Cần số điện thoại.";
+    else if (!/^[0-9]{9,15}$/.test(form.phone.replace(/\s/g, ""))) next.phone = "SĐT không hợp lệ.";
     if (!form.birthDate) next.birthDate = "Chọn ngày sinh.";
     if (!form.gender) next.gender = "Chọn giới tính.";
-
     if (!form.password) next.password = "Nhập mật khẩu.";
-    else if (!isStrongPassword(form.password)) {
-      next.password = "Mật khẩu cần ≥8 ký tự, có hoa, thường và số.";
-    }
-
+    else if (!isStrongPassword(form.password)) next.password = "Mật khẩu chưa đủ mạnh.";
     if (form.confirmPassword !== form.password) next.confirmPassword = "Mật khẩu xác nhận không khớp.";
-
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -99,7 +86,6 @@ export default function AdminModeratorCreate() {
       setApiError("Chưa đăng nhập.");
       return;
     }
-
     const body = {
       username: form.username.trim().toLowerCase(),
       email: form.email.trim().toLowerCase(),
@@ -110,13 +96,12 @@ export default function AdminModeratorCreate() {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
     };
-
     setIsSubmitting(true);
     try {
-      await adminRegisterModerator(token, body);
-      navigate("/admin/moderators");
+      await adminRegisterAdmin(token, body);
+      navigate("/admin/users");
     } catch (err) {
-      setApiError(adminApiError(err, "Tạo moderator thất bại."));
+      setApiError(adminApiError(err, "Đăng ký admin thất bại."));
     } finally {
       setIsSubmitting(false);
     }
@@ -124,15 +109,15 @@ export default function AdminModeratorCreate() {
 
   return (
     <main className="flex-1 overflow-y-auto p-8">
-      <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
+      <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold tracking-tight text-primary">Tạo moderator</h2>
-          <p className="mt-1 text-slate-500">POST /api/Admin/moderators/register — không cần OTP email trên FE.</p>
+          <h2 className="text-2xl font-extrabold text-primary">Tạo tài khoản Admin</h2>
+          <p className="text-sm text-slate-500">POST /api/Admin/Register</p>
         </div>
         <button
           type="button"
           onClick={() => navigate("/admin/moderators")}
-          className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50"
+          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
         >
           Quay lại
         </button>
@@ -142,77 +127,71 @@ export default function AdminModeratorCreate() {
         <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{apiError}</div>
       ) : null}
 
-      <section className="mb-6 rounded-xl border border-primary/10 bg-white p-5 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Admin thao tác</p>
-        <p className="mt-1 text-sm font-semibold text-slate-900">{adminLabel}</p>
-      </section>
-
-      <form onSubmit={onSubmit} className="space-y-6">
+      <form onSubmit={onSubmit} className="max-w-3xl space-y-6">
         <section className="rounded-xl border border-primary/10 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-slate-900">Thông tin</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Tên</span>
+              <span className="text-sm font-semibold text-slate-700">Tên</span>
               <input
                 value={form.firstName}
                 onChange={(e) => updateField("firstName", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
               {errors.firstName ? <p className="mt-1 text-xs text-rose-600">{errors.firstName}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Họ & đệm</span>
+              <span className="text-sm font-semibold text-slate-700">Họ & đệm</span>
               <input
                 value={form.lastName}
                 onChange={(e) => updateField("lastName", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
               {errors.lastName ? <p className="mt-1 text-xs text-rose-600">{errors.lastName}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Username</span>
+              <span className="text-sm font-semibold text-slate-700">Username</span>
               <input
                 value={form.username}
                 onChange={(e) => updateField("username", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
               {errors.username ? <p className="mt-1 text-xs text-rose-600">{errors.username}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Email</span>
+              <span className="text-sm font-semibold text-slate-700">Email</span>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => updateField("email", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
               {errors.email ? <p className="mt-1 text-xs text-rose-600">{errors.email}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Điện thoại</span>
+              <span className="text-sm font-semibold text-slate-700">Điện thoại</span>
               <input
                 value={form.phone}
                 onChange={(e) => updateField("phone", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
               {errors.phone ? <p className="mt-1 text-xs text-rose-600">{errors.phone}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Ngày sinh</span>
+              <span className="text-sm font-semibold text-slate-700">Ngày sinh</span>
               <input
                 type="date"
                 value={form.birthDate}
                 onChange={(e) => updateField("birthDate", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
               {errors.birthDate ? <p className="mt-1 text-xs text-rose-600">{errors.birthDate}</p> : null}
             </label>
             <label className="block md:col-span-2">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Giới tính</span>
+              <span className="text-sm font-semibold text-slate-700">Giới tính</span>
               <select
                 value={form.gender}
                 onChange={(e) => updateField("gender", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               >
                 {GENDERS.map((g) => (
                   <option key={g.value || "x"} value={g.value}>
@@ -226,25 +205,24 @@ export default function AdminModeratorCreate() {
         </section>
 
         <section className="rounded-xl border border-primary/10 bg-white p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-bold text-slate-900">Mật khẩu</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Mật khẩu</span>
+              <span className="text-sm font-semibold text-slate-700">Mật khẩu</span>
               <input
                 type="password"
                 value={form.password}
                 onChange={(e) => updateField("password", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
               {errors.password ? <p className="mt-1 text-xs text-rose-600">{errors.password}</p> : null}
             </label>
             <label className="block">
-              <span className="mb-1 block text-sm font-semibold text-slate-700">Xác nhận</span>
+              <span className="text-sm font-semibold text-slate-700">Xác nhận</span>
               <input
                 type="password"
                 value={form.confirmPassword}
                 onChange={(e) => updateField("confirmPassword", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-primary/30 focus:ring-2 focus:ring-primary/20"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
               {errors.confirmPassword ? <p className="mt-1 text-xs text-rose-600">{errors.confirmPassword}</p> : null}
             </label>
@@ -257,20 +235,13 @@ export default function AdminModeratorCreate() {
           </ul>
         </section>
 
-        <div className="flex flex-wrap justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/admin/moderators")}
-            className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Hủy
-          </button>
+        <div className="flex justify-end gap-2">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+            className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-white hover:opacity-90 disabled:opacity-50"
           >
-            {isSubmitting ? "Đang gửi…" : "Tạo moderator"}
+            {isSubmitting ? "Đang tạo…" : "Tạo admin"}
           </button>
         </div>
       </form>

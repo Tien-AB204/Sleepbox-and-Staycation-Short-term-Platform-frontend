@@ -10,8 +10,12 @@ const navItems = [
   { to: "/admin/dashboard", label: "Bảng điều khiển", icon: "dashboard" },
   { to: "/admin/users", label: "Người dùng", icon: "group" },
   { to: "/admin/moderators", label: "Moderators", icon: "gavel" },
+  { to: "/admin/pricing/addons", label: "Add-on", icon: "add_circle" },
+  { to: "/admin/pricing/box-limits", label: "Giá box", icon: "sell" },
+  { to: "/admin/pricing/platform-fee", label: "Phí nền tảng", icon: "percent" },
+  { to: "/admin/pricing/system-rules", label: "Quy tắc giá", icon: "rule" },
   { to: "/admin/transactions", label: "Giao dịch", icon: "receipt_long" },
-  { to: "/admin/settings", label: "Cài đặt hệ thống", icon: "settings" },
+  { to: "/admin/settings", label: "Cài đặt & liên kết", icon: "settings" },
 ];
 
 export default function AdminLayout() {
