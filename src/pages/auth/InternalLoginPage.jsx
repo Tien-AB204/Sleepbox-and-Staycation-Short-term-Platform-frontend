@@ -79,137 +79,179 @@ export default function InternalLoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-background-light font-display text-slate-900">
-      <header className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-primary/10 bg-white/50 px-6 py-4 backdrop-blur-md md:px-10">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="size-8 text-primary">
-            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-              <path
-                d="M8.57829 8.57829C5.52816 11.6284 3.451 15.5145 2.60947 19.7452C1.76794 23.9758 2.19984 28.361 3.85056 32.3462C5.50128 36.3314 8.29667 39.7376 11.8832 42.134C15.4698 44.5305 19.6865 45.8096 24 45.8096C28.3135 45.8096 32.5302 44.5305 36.1168 42.134C39.7033 39.7375 42.4987 36.3314 44.1494 32.3462C45.8002 28.361 46.2321 23.9758 45.3905 19.7452C44.549 15.5145 42.4718 11.6284 39.4217 8.57829L24 24L8.57829 8.57829Z"
-                fill="currentColor"
-              />
-            </svg>
-          </div>
-          <h2 className="text-xl font-extrabold leading-tight tracking-tight text-slate-900">BoxHub</h2>
-        </Link>
-        <div className="flex items-center gap-4">
-          <span className="hidden text-sm font-semibold text-primary md:block">Hỗ trợ nội bộ</span>
-          <button
-            type="button"
-            className="flex h-10 min-w-[100px] cursor-pointer items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold leading-normal text-white shadow-md shadow-primary/20 transition-transform active:scale-95"
-          >
-            Help Center
-          </button>
-        </div>
-      </header>
-
-      <main className="relative flex flex-1 items-center justify-center overflow-hidden p-4 md:p-10">
-        <div className="pointer-events-none absolute inset-0 -z-10 opacity-30">
-          <div className="absolute right-[-5%] top-[-10%] h-[40%] w-[40%] rounded-full bg-primary/10 blur-[100px]" />
-          <div className="absolute bottom-[-10%] left-[-5%] h-[40%] w-[40%] rounded-full bg-primary/5 blur-[100px]" />
+    <div className="flex min-h-screen w-full bg-white font-sans text-slate-900">
+      {/* Left / Info Panel (Hidden on very small screens, visible on md+) */}
+      <div className="relative hidden w-[45%] flex-col justify-between bg-[#F4F7F9] p-10 md:flex lg:p-16">
+        {/* Abstract background graphics to mimic the clean desk/monitor vibe */}
+        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+          <div className="absolute top-[20%] left-[50%] h-[300px] w-[300px] -translate-x-1/2 rounded-full bg-white/60 blur-[60px]" />
+          <div className="absolute top-[45%] left-[50%] h-[150px] w-[400px] -translate-x-1/2 rounded-t-3xl bg-slate-200/50" />
+          <div className="absolute top-[60%] left-[30%] h-[10px] w-[80%] rounded-full bg-white" />
         </div>
 
-        <div className="w-full max-w-[480px] rounded-xl border border-primary/10 bg-white p-8 shadow-2xl shadow-primary/5 backdrop-blur-xl md:p-10">
-          <div className="mb-8 flex flex-col gap-2">
-            <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900">Đăng nhập BoxHub</h1>
-            <p className="text-base font-medium text-slate-500">
-              Khách, Host hoặc tài khoản nội bộ (Admin / Moderator / Staff)
-            </p>
+        {/* Top Logo */}
+        <div className="relative z-10">
+          <div className="text-2xl font-black tracking-tight text-[#1A1130]">
+            BoxHub
           </div>
+        </div>
 
-          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
-            {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-            )}
+        {/* Middle Content */}
+        <div className="relative z-10 max-w-md">
+          <div className="mb-6 h-1 w-8 bg-[#352166]" />
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[#1A1130] lg:text-4xl lg:leading-[1.15]">
+            Nền tảng quản trị hậu cần thông minh thế hệ mới
+          </h1>
+          <p className="mt-4 text-[15px] leading-relaxed text-slate-600">
+            Tối ưu hóa quy trình vận hành với hệ thống phân tích dữ liệu thời gian thực và quản lý tập trung.
+          </p>
+        </div>
 
-            <div className="flex flex-col gap-2">
-              <label htmlFor="internal-email" className="text-sm font-bold leading-normal text-slate-700">
-                Email
-              </label>
-              <input
-                id="internal-email"
-                className="h-14 w-full rounded-lg border border-primary/10 bg-slate-50 p-4 text-base text-slate-900 transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                placeholder="name@company.com"
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+        {/* Bottom Stats */}
+        <div className="relative z-10 flex gap-12">
+          <div>
+            <div className="text-xl font-bold text-[#1A1130]">99.9%</div>
+            <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Uptime Reliable</div>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-[#1A1130]">AES-256</div>
+            <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Data Encryption</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right / Form Area */}
+      <div className="relative flex w-full flex-col p-6 md:w-[55%] lg:p-12 xl:px-24 xl:py-12">
+        {/* Top Right Help Link */}
+        <div className="absolute right-6 top-6 lg:right-12 lg:top-8">
+          <a href="#" className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition-colors hover:text-[#352166]">
+            <span className="material-symbols-outlined text-[16px]">help</span>
+            Trung tâm hỗ trợ
+          </a>
+        </div>
+
+        {/* Mobile Logo (only shows when left panel is hidden) */}
+        <div className="mb-12 mt-4 md:hidden">
+          <div className="text-2xl font-black tracking-tight text-[#1A1130]">
+            BoxHub
+          </div>
+        </div>
+
+        <div className="flex flex-1 flex-col justify-center">
+          <div className="mx-auto w-full max-w-[400px]">
+            {/* Header */}
+            <div className="mb-10 text-center sm:text-left">
+              <h2 className="text-3xl font-extrabold tracking-tight text-[#1A1130]">Hệ thống Quản trị</h2>
+              <p className="mt-3 text-[14px] leading-relaxed text-slate-500">
+                Chào mừng quay trở lại. Vui lòng đăng nhập để tiếp tục quản lý vận hành.
+              </p>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="internal-password" className="text-sm font-bold leading-normal text-slate-700">
-                  Mật khẩu
+            {/* Form */}
+            <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <label htmlFor="internal-email" className="text-[11px] font-bold uppercase tracking-wider text-[#4A3B69]">
+                  Địa chỉ Email
                 </label>
-              </div>
-              <div className="relative flex items-center">
                 <input
-                  id="internal-password"
-                  className="h-14 w-full rounded-lg border border-primary/10 bg-slate-50 p-4 pr-12 text-base text-slate-900 transition-all placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  placeholder="Nhập mật khẩu"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="internal-email"
+                  className="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#352166] focus:ring-1 focus:ring-[#352166]"
+                  placeholder="name@boxhub.logistics"
+                  type="email"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-                <button
-                  type="button"
-                  className="absolute right-4 text-slate-400 transition-colors hover:text-primary"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-                >
-                  <span className="material-symbols-outlined text-[22px]">
-                    {showPassword ? "visibility_off" : "visibility"}
-                  </span>
-                </button>
               </div>
-            </div>
 
-            <div className="flex items-center justify-between py-1">
-              <label className="group flex cursor-pointer items-center gap-3">
-                <input
-                  type="checkbox"
-                  className="h-5 w-5 cursor-pointer rounded border-primary/20 text-primary focus:ring-2 focus:ring-primary/20 focus:ring-offset-0"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />
-                <span className="text-sm font-semibold text-slate-600 transition-colors group-hover:text-primary">
-                  Ghi nhớ đăng nhập
-                </span>
-              </label>
-              <Link className="text-sm font-bold text-primary underline-offset-4 hover:underline" to="/forgot-password">
-                Quên mật khẩu?
-              </Link>
-            </div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="internal-password" className="text-[11px] font-bold uppercase tracking-wider text-[#4A3B69]">
+                    Mật khẩu
+                  </label>
+                  <Link className="text-[11px] font-bold uppercase tracking-wider text-slate-400 transition-colors hover:text-[#352166]" to="/forgot-password">
+                    Quên mật khẩu?
+                  </Link>
+                </div>
+                <div className="relative flex items-center">
+                  <input
+                    id="internal-password"
+                    className="h-12 w-full rounded-lg border border-slate-200 bg-white py-4 pl-4 pr-12 text-sm text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#352166] focus:ring-1 focus:ring-[#352166]"
+                    placeholder="••••••••"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 flex size-8 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-50 hover:text-[#352166]"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showPassword ? "visibility_off" : "visibility"}
+                    </span>
+                  </button>
+                </div>
+              </div>
 
-            <button
-              className="h-14 w-full rounded-lg bg-primary text-base font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-60"
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? "Đang đăng nhập..." : "Đăng nhập vào hệ thống"}
-            </button>
-          </form>
+              <div className="mt-1 flex items-center">
+                <label className="group flex cursor-pointer items-center gap-3">
+                  <input
+                    type="checkbox"
+                    className="size-4 cursor-pointer rounded border-slate-300 text-[#352166] transition-colors focus:ring-1 focus:ring-[#352166] focus:ring-offset-0"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                  />
+                  <span className="text-[13px] font-medium text-slate-600 transition-colors group-hover:text-[#1A1130]">
+                    Duy trì đăng nhập cho phiên này
+                  </span>
+                </label>
+              </div>
+
+              <button
+                className="mt-2 h-12 w-full rounded-lg bg-[#352166] text-[14px] font-bold text-white shadow-md shadow-[#352166]/20 transition-all hover:bg-[#2A1A52] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? "Đang xử lý..." : "Đăng nhập vào hệ thống"}
+              </button>
+
+              {/* Security badge under button */}
+              <div className="mt-6 flex items-center justify-between rounded-lg border border-emerald-100 bg-emerald-50/50 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px] text-emerald-600">verified_user</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">Môi trường bảo mật tối cao</span>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">BoxHub Security</span>
+              </div>
+            </form>
+          </div>
         </div>
-      </main>
 
-      <footer className="flex flex-col items-center justify-between gap-4 border-t border-primary/5 bg-transparent px-6 py-8 md:flex-row">
-        <p className="text-xs font-medium text-slate-400">© 2024 BoxHub Logistics Solutions Inc. All rights reserved.</p>
-        <div className="flex gap-6">
-          <a className="text-xs font-semibold text-slate-400 transition-colors hover:text-primary" href="#">
-            Privacy Policy
-          </a>
-          <a className="text-xs font-semibold text-slate-400 transition-colors hover:text-primary" href="#">
-            Terms of Service
-          </a>
-          <a className="text-xs font-semibold text-slate-400 transition-colors hover:text-primary" href="#">
-            Contact Support
-          </a>
+        {/* Right Footer */}
+        <div className="mt-auto pt-10 text-center sm:text-left">
+          <div className="mx-auto max-w-[400px]">
+            <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Bảo mật bởi BoxHub Security
+            </p>
+            <div className="flex flex-wrap justify-center gap-6 sm:justify-start">
+              <a href="#" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:text-[#352166]">Chính sách</a>
+              <a href="#" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:text-[#352166]">Hỗ trợ kỹ thuật</a>
+              <a href="#" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 transition-colors hover:text-[#352166]">Tiêu chuẩn</a>
+            </div>
+          </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
