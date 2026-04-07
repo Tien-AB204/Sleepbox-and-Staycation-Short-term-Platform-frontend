@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { Link, Outlet, useParams, useNavigate } from "react-router-dom";
 import { HOST_STEPS } from "../pages/host/onboarding/hostOnboardingSteps";
+import boxhubLogo from "../assets/images/logo.png";
 
 export default function HostOnboardingLayout() {
   const { step } = useParams();
@@ -27,8 +28,8 @@ export default function HostOnboardingLayout() {
   return (
     <div className="min-h-screen bg-background-light font-display text-slate-900">
       <header className="fixed left-0 top-0 z-50 flex h-16 w-full items-center justify-between border-b border-primary/10 bg-white/85 px-4 backdrop-blur-md sm:px-6">
-        <Link to="/" className="text-2xl font-black tracking-tight text-primary">
-          BoxHub
+        <Link to="/" className="flex items-center">
+          <img src={boxhubLogo} alt="BoxHub" className="h-8 object-contain" />
         </Link>
         <div className="flex items-center gap-1 sm:gap-2">
           <button

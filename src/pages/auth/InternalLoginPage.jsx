@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { login as loginService } from "../../services/authService";
 import { useAuthContext } from "../../contexts/AuthContext";
-import boxhubLogo from "../../assets/images/BOXHUB.png";
+import boxhubLogo from "../../assets/images/logo.png";
 
 /** Sau đăng nhập — mọi role (guest / host / nội bộ) */
 const ROLE_HOME = {

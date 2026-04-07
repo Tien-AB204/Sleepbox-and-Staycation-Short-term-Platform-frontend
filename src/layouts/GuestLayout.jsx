@@ -4,7 +4,6 @@ import { useAuthContext } from "../contexts/AuthContext";
 
 // IMPORT HÌNH ẢNH
 import boxHubLogo from "../assets/images/logo.png";
-import boxHubText from "../assets/images/BOXHUB.png";
 import flagVN from "../assets/images/vietnamFlag.png";
 import flagEN from "../assets/images/englishFlag.png";
 
@@ -46,11 +45,6 @@ const GuestLayout = () => {
               src={boxHubLogo}
               alt="Logo"
               className="h-10 w-auto object-contain relative z-10 shrink-0"
-            />
-            <img
-              src={boxHubText}
-              alt="BOXHUB"
-              className="h-10 w-auto object-contain scale-[2.5] origin-left -ml-5"
             />
           </Link>
           {/* ========================================================== */}

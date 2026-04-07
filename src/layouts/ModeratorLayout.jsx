@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuthContext } from "../contexts/AuthContext";
 import { useInternalLogout } from "../hooks/useInternalLogout";
-import boxHubLogo from "../assets/images/BOXHUB.png";
+import boxhubLogo from "../assets/images/logo.png";
 
 const MOD_AVATAR_URL =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuD_knlqmnoxjTmxOMgSnGnHruAL9_tWzeZ42XyKEXYYzsZNwTsINQpmdEDCOn21t7K-x2kq2misF1GMATzU2V1PSmuaA4gQAUCtGGSoyeSgy6u4G-dMQIFztHocG2d2YuCoR1TpY80D0gw4l9uEkd8UgDedpex4qU1LMxGgy0dMgXDwYFyKQDOACqsGabIHrhhxGXiHVKnb5LGtRHYEnDN9haaIPxfRcgJe5Kom02WGwOO7JyI7j7SRYqfuZwMN2f-AGC5CLqF7kMKU"; // Thay bằng avatar mock cho Mod
