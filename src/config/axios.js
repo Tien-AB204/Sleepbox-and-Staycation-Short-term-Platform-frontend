@@ -29,14 +29,20 @@ const instance = axios.create({
 // =========================================================================
 instance.interceptors.request.use(
   (config) => {
-    // Đọc token từ localStorage
-    const token = localStorage.getItem("accessToken"); 
-    
-    // Nếu có token, tự động nhét vào Header Authorization
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
+    // Nhận diện xem API đang gọi có thuộc luồng OTP / Đăng ký Host không
+    const isAuthOrRegisterAPI = config.url && (
+      config.url.includes('/otp/') || 
+      config.url.includes('/host/register/')
+    );
+
+    // NẾU KHÔNG PHẢI ĐĂNG KÝ HOST -> Mới được phép nhét Token mặc định vào
+    if (!isAuthOrRegisterAPI) {
+      const token = localStorage.getItem("accessToken"); 
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
-    
+    // NẾU LÀ ĐĂNG KÝ HOST -> Để nguyên hiện trạng, không được đụng vào!
     return config;
   },
   (error) => {
@@ -52,10 +58,17 @@ instance.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Nếu Backend báo 401 Unauthorized (Token hết hạn hoặc bị sai)
-    if (error.response && error.response.status === 401) {
+    const originalRequest = error.config;
+    
+    // FIX TỘI ÁC 2: Kiểm tra xem API đang gọi có phải là API đăng ký / OTP không
+    const isAuthOrRegisterAPI = originalRequest && (
+      originalRequest.url.includes('/otp/') || 
+      originalRequest.url.includes('/host/register/')
+    );
+
+    // Nếu Backend báo 401 và KHÔNG PHẢI là luồng đăng ký thì mới đá văng ra Login
+    if (error.response && error.response.status === 401 && !isAuthOrRegisterAPI) {
       console.warn("Token hết hạn hoặc không hợp lệ.");
-      // Mở khóa 2 dòng dưới nếu muốn tự động đá user về trang đăng nhập khi token chết:
       localStorage.removeItem("accessToken");
       window.location.href = "/internal/login";
     }

@@ -37,9 +37,9 @@ const HOST_REGISTER_API_KEY_TO_FORM = {
   BrandName: "brandName",
   brand_name: "brandName",
   brandName: "brandName",
-  BusinessName: "companyName",
-  business_name: "companyName",
-  businessName: "companyName",
+  BusinessName: "businessName",
+  business_name: "businessName",
+  businessName: "businessName",
   AddressDistrict: "district",
   address_district: "district",
   addressDistrict: "district",
@@ -206,18 +206,28 @@ const draftIdFromRegisterToken = (token) => {
   return payload.draft_id ?? payload.draftId;
 };
 
-/** Phản hồi send-otp / verify-otp / resend-otp — chuẩn hóa `draftId`/`token` (PascalCase + JWT `sub`). */
+/** Phản hồi send-otp / verify-otp / resend-otp — chuẩn hóa bòn vét token mọi ngóc ngách */
 const unwrapHostRegisterResponse = (data) => {
   if (!data || typeof data !== "object") return {};
-  const tokenRaw = data.token ?? data.Token;
+  
+  // Xử lý việc Backend mới hay bọc token trong biến `data`
+  let tokenRaw = data.token ?? data.Token;
+  if (!tokenRaw && data.data) {
+    tokenRaw = typeof data.data === "string" ? data.data : (data.data.token ?? data.data.Token);
+  }
   const token = tokenRaw != null && String(tokenRaw).trim() !== "" ? String(tokenRaw).trim() : undefined;
-  const draftFromBody = data.draftId ?? data.DraftId;
+  
+  let draftFromBody = data.draftId ?? data.DraftId;
+  if (!draftFromBody && data.data && typeof data.data === "object") {
+    draftFromBody = data.data.draftId ?? data.data.DraftId;
+  }
   const draftId = draftFromBody ?? (token ? draftIdFromRegisterToken(token) : undefined);
+  
   return {
     ...data,
     draftId,
     token,
-    success: data.success ?? data.Success,
+    success: data.success ?? data.Success ?? data.isSuccess ?? true,
     message: data.message ?? data.Message,
   };
 };
@@ -231,48 +241,61 @@ const draftTokenRequestOptions = (token) => {
   };
 };
 
-/** `POST /api/host/register/send-otp` — body: `{ email }` (SendHostRegisterOtpRequest). */
+// =========================================================================
+// CÁC API OTP MỚI ĐÃ ĐƯỢC CẬP NHẬT TẠI ĐÂY
+// =========================================================================
+
+/** `POST /api/otp/send` — body: `{ email, purpose }` */
 export const sendHostRegisterOtp = async (email) => {
   try {
-    const res = await axios.post("/host/register/send-otp", { email }, { timeout: HOST_REGISTER_OTP_TIMEOUT_MS });
+    const res = await axios.post("/otp/send", { email, purpose: "HOST_REGISTER" }, { timeout: HOST_REGISTER_OTP_TIMEOUT_MS });
     return unwrapHostRegisterResponse(res.data);
   } catch (err) {
     throw getApiErrorMessage(err, "Gửi OTP đăng ký host thất bại");
   }
 };
 
-/** `POST /api/verify-otp` — body: `{ email, otpCode }` (VerifyOtpRequest) → VerifyOtpResponse. */
+/** `POST /api/otp/verify` — body: `{ email, otpCode, purpose }` */
 export const verifyHostRegisterOtp = async ({ email, otpCode }) => {
   try {
-    const res = await axios.post("/verify-otp", { email, otpCode }, { timeout: HOST_REGISTER_OTP_TIMEOUT_MS });
+    const res = await axios.post("/otp/verify", { email, otpCode, purpose: "HOST_REGISTER" }, { timeout: HOST_REGISTER_OTP_TIMEOUT_MS });
     return unwrapHostRegisterResponse(res.data);
   } catch (err) {
     throw getApiErrorMessage(err, "Xác thực OTP thất bại");
   }
 };
 
-/** `POST /api/resend-otp` — body: `{ email }` (ResendOtpRequest). */
+/** `POST /api/otp/resend` — body: `{ email, purpose }` */
 export const resendHostRegisterOtp = async (email) => {
   try {
-    const res = await axios.post("/resend-otp", { email }, { timeout: HOST_REGISTER_OTP_TIMEOUT_MS });
+    const res = await axios.post("/otp/resend", { email, purpose: "HOST_REGISTER" }, { timeout: HOST_REGISTER_OTP_TIMEOUT_MS });
     return unwrapHostRegisterResponse(res.data);
   } catch (err) {
     throw getApiErrorMessage(err, "Gửi lại OTP thất bại");
   }
 };
 
-export const updateHostRegisterDraft = async ({ draftId, token, payload }) => {
+// =========================================================================
+// CÁC API KHÁC GIỮ NGUYÊN
+// =========================================================================
+
+export const updateHostRegisterDraft = async ({ token, payload }) => {
+  console.log("🔥 TOKEN GỬI ĐI TỪ BƯỚC 5 LÀ:", token);
   try {
     const formData = new FormData();
     Object.entries(payload || {}).forEach(([key, value]) => {
-      const isFile = typeof File !== "undefined" && value instanceof File;
+      // Dùng Duck-typing thay vì instanceof File
+      const isFile = value && typeof value === "object" && value.size !== undefined && value.name !== undefined;
       const hasValue = isFile ? value.size > 0 : value !== undefined && value !== null && String(value).trim() !== "";
+      
       if (hasValue) {
         formData.append(key, value);
       }
     });
-    const res = await axios.put(`/host/register/draft/${draftId}`, formData, {
+    
+    const res = await axios.post(`/host/register/draft`, formData, {
       ...draftTokenRequestOptions(token),
+      timeout: 120000, // Tăng timeout vì có thể upload file lớn (đại diện, đăng ký kinh doanh)
     });
     return res.data;
   } catch (err) {

@@ -6,6 +6,9 @@ import {
   saveHostOnboardingDraft,
   setHostOnboardingComplete,
   clearHostOnboardingDraft,
+  saveDraftFilesToDB,       // <-- THÊM MỚI
+  getDraftFilesFromDB,      // <-- THÊM MỚI
+  clearDraftFilesFromDB,    // <-- THÊM MỚI
 } from "../../../utils/hostOnboarding";
 import { HOST_STEPS } from "./hostOnboardingSteps";
 import {
@@ -42,7 +45,7 @@ const HOST_ONBOARD_STEP3_ERR_KEYS = new Set([
   "representativeBack",
 ]);
 const HOST_ONBOARD_STEP4_ERR_KEYS = new Set([
-  "companyName",
+  "businessName", // <-- Đổi companyName thành businessName
   "taxCode",
   "brandName",
   "district",
@@ -80,30 +83,30 @@ const emptyRegisterDraftFiles = () => ({
 });
 
 const buildRegisterDraftApiPayload = (d, files) => {
-  const fullName =
-    String(d.fullName || "").trim() ||
+  const repIdName = String(d.idName || d.fullName || "").trim() ||
     [d.lastName, d.firstName].filter(Boolean).join(" ").trim();
+
   const phone = typeof d.phone === "string" ? d.phone.trim() : d.phone;
   const idNum = typeof d.idNumber === "string" ? d.idNumber.trim() : d.idNumber;
-  /** Khớp multipart schema Swagger backend (`first_name`, `representative_front_url`, …). */
+
+  /** CHUẨN SNAKE_CASE 100% THEO ĐÚNG SWAGGER BE YÊU CẦU */
   return {
-    email: d.email,
     username: d.username,
-    phone,
+    phone: phone,
     first_name: d.firstName,
     last_name: d.lastName,
-    representative_id_name: fullName,
+    representative_id_name: repIdName,
     representative_id_number: idNum,
     representative_front_url: files.representativeFront,
     representative_back_url: files.representativeBack,
-    brand_name: d.brandName,
-    business_name: d.companyName,
     tax_code: d.taxCode,
+    brand_name: d.brandName,
+    brand_avatar: files.brandAvatar,
+    business_name: d.businessName, // Sếp nhớ nãy mình đã đổi tên biến nội bộ thành businessName rồi nhé
     address_district: d.district,
     address_ward: d.ward,
     address_detail: d.companyAddress,
     company_registration: files.companyRegistration,
-    brand_avatar: files.brandAvatar,
     bank_name: d.bankName,
     account_number: d.bankAccount,
     account_name: d.bankHolder,
@@ -113,27 +116,26 @@ const buildRegisterDraftApiPayload = (d, files) => {
 
 const validateFullRegisterDraft = (d, files) => {
   const errs = [];
+  // Tuyệt chiêu Duck-typing: Check size và name thay vì dùng instanceof File
+  const isValidFile = (f) => f && typeof f === "object" && f.size > 0 && f.name !== undefined;
+
   if (!String(d.username || "").trim()) errs.push("Tên đăng nhập");
   if (!String(d.lastName || "").trim() || !String(d.firstName || "").trim()) errs.push("Họ và tên");
   if (!String(d.phone || "").trim()) errs.push("Số điện thoại");
   if (!String(d.idNumber || "").trim()) errs.push("Số CCCD/CMND");
-  if (!(files.representativeFront instanceof File) || files.representativeFront.size <= 0) {
-    errs.push("Ảnh mặt trước CCCD");
-  }
-  if (!(files.representativeBack instanceof File) || files.representativeBack.size <= 0) {
-    errs.push("Ảnh mặt sau CCCD");
-  }
-  if (!String(d.companyName || "").trim()) errs.push("Tên doanh nghiệp");
+  
+  if (!isValidFile(files.representativeFront)) errs.push("Ảnh mặt trước CCCD");
+  if (!isValidFile(files.representativeBack)) errs.push("Ảnh mặt sau CCCD");
+  
+  if (!String(d.businessName || "").trim()) errs.push("Tên doanh nghiệp"); 
   if (!String(d.brandName || "").trim()) errs.push("Tên thương hiệu");
   if (!String(d.district || "").trim()) errs.push("Quận/Huyện");
   if (!String(d.ward || "").trim()) errs.push("Phường/Xã");
   if (!String(d.companyAddress || "").trim()) errs.push("Địa chỉ trụ sở");
-  if (!(files.companyRegistration instanceof File) || files.companyRegistration.size <= 0) {
-    errs.push("Giấy phép kinh doanh (file)");
-  }
-  if (!(files.brandAvatar instanceof File) || files.brandAvatar.size <= 0) {
-    errs.push("Avatar thương hiệu (file)");
-  }
+  
+  if (!isValidFile(files.companyRegistration)) errs.push("Giấy phép kinh doanh (file)");
+  if (!isValidFile(files.brandAvatar)) errs.push("Avatar thương hiệu (file)");
+  
   if (!String(d.bankAccount || "").trim()) errs.push("Số tài khoản ngân hàng");
   if (!String(d.bankHolder || "").trim()) errs.push("Tên chủ tài khoản");
   return errs;
@@ -267,6 +269,17 @@ export default function HostOnboardingPage() {
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [settingPassword, setSettingPassword] = useState(false);
 
+  // --- THÊM LOGIC ĐẾM NGƯỢC OTP ---
+  const [resendTimer, setResendTimer] = useState(60); 
+
+  useEffect(() => {
+    if (current === 2 && resendTimer > 0) {
+      const timerId = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timerId);
+    }
+  }, [current, resendTimer]);
+  // --------------------------------
+
   const idFrontBlobRef = useRef(null);
   const idBackBlobRef = useRef(null);
   const idFrontInputRef = useRef(null);
@@ -340,6 +353,22 @@ export default function HostOnboardingPage() {
   useEffect(() => {
     if (current !== 3) setStep3FieldErrors({});
   }, [current]);
+
+  // --- TỰ ĐỘNG KHÔI PHỤC ẢNH TỪ KHO NGẦM KHI F5 ---
+  useEffect(() => {
+    getDraftFilesFromDB().then((savedFiles) => {
+      if (savedFiles) {
+        setRegisterDraftFiles(savedFiles);
+        // Khôi phục giao diện hiển thị ảnh
+        if (savedFiles.representativeFront) applyFrontFile(savedFiles.representativeFront, false);
+        if (savedFiles.representativeBack) applyBackFile(savedFiles.representativeBack, false);
+        if (savedFiles.companyRegistration) applyCompanyRegFile(savedFiles.companyRegistration, false);
+        if (savedFiles.brandAvatar) applyBrandAvatarFile(savedFiles.brandAvatar, false);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // --------------------------------------------------
 
   useEffect(() => {
     if (current !== 3) {
@@ -577,21 +606,26 @@ export default function HostOnboardingPage() {
 
   const go = (n) => navigate(`/host/register/${n}`);
 
-  const getRegisterCredentials = () => {
-    const draftId = draft.registerDraftId;
-    const token = draft.registerToken;
-    if (!draftId || !token) {
-      throw new Error("Thiếu draftId hoặc token đăng ký. Vui lòng xác thực OTP lại.");
-    }
+const getRegisterCredentials = () => {
+    // Tắt cái trò "chặn cửa" của Frontend đi, cứ có gì gửi nấy cho Backend phân xử!
+    const token = draft.registerToken || "";
+    const draftId = draft.registerDraftId || "";
     return { draftId, token };
   };
 
   const saveDraftToApi = async (payload) => {
-    const { draftId, token } = getRegisterCredentials();
+    const { token } = getRegisterCredentials();
     setSavingDraft(true);
     setOtpError("");
     try {
-      await updateHostRegisterDraft({ draftId, token, payload });
+      // Chỉ truyền token và payload
+      const res = await updateHostRegisterDraft({ token, payload });
+      
+      // Hứng draftId do BE trả về sau khi tạo thành công ở Bước 5 (để dùng cho Bước 6)
+      if (res?.draftId || res?.id) {
+        patchDraft({ registerDraftId: res.draftId || res.id });
+      }
+      return res;
     } finally {
       setSavingDraft(false);
     }
@@ -643,6 +677,7 @@ export default function HostOnboardingPage() {
         registerToken: result?.token || draft.registerToken,
       });
       setOtpInfo("Đã gửi OTP đến email của bạn.");
+      setResendTimer(60); // <-- Bắt đầu đếm ngược 60s khi chuyển sang bước 2
       go(2);
     } catch (error) {
       setOtpError(onboardingErrorMessage(error, "Không thể gửi OTP. Vui lòng thử lại."));
@@ -654,6 +689,7 @@ export default function HostOnboardingPage() {
   const finishAndEnterHost = async () => {
     setHostOnboardingComplete();
     clearHostOnboardingDraft();
+    clearDraftFilesFromDB();
     if (user) {
       navigate("/host/dashboard", { replace: true });
       return;
@@ -835,7 +871,7 @@ export default function HostOnboardingPage() {
             Không nhận được email?{" "}
             <button
               type="button"
-              disabled={sendingOtp || !draft.email}
+              disabled={sendingOtp || !draft.email || resendTimer > 0}
               onClick={async () => {
                 if (!draft.email) return;
                 setSendingOtp(true);
@@ -844,15 +880,16 @@ export default function HostOnboardingPage() {
                 try {
                   await resendHostRegisterOtp(draft.email);
                   setOtpInfo("Đã gửi lại OTP. Vui lòng kiểm tra email.");
+                  setResendTimer(60); // <-- Reset lại 60s khi bấm gửi lại thành công
                 } catch (error) {
                   setOtpError(onboardingErrorMessage(error, "Không thể gửi lại OTP."));
                 } finally {
                   setSendingOtp(false);
                 }
               }}
-              className="font-bold text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+              className="font-bold text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50 min-w-[120px] text-left"
             >
-              {sendingOtp ? "Đang gửi..." : "Gửi lại mã"}
+              {sendingOtp ? "Đang gửi..." : resendTimer > 0 ? `Gửi lại mã (${resendTimer}s)` : "Gửi lại mã"}
             </button>
           </p>
           <div className="grid w-full max-w-md grid-cols-1 gap-4 md:grid-cols-2">
@@ -914,6 +951,7 @@ export default function HostOnboardingPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="space-y-5 lg:col-span-8">
             <form
+              key="form-step-3"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
@@ -935,10 +973,10 @@ export default function HostOnboardingPage() {
                 const clientErrs = {};
                 const eu = validateHostUsername(username);
                 if (eu) clientErrs.username = eu;
-                const eln = validateVietnameseNamePart(lastName, "Họ");
-                if (eln) clientErrs.lastName = eln;
-                const efn = validateVietnameseNamePart(firstName, "Tên đệm và tên");
-                if (efn) clientErrs.firstName = efn;
+                const eln = validateVietnameseNamePart(firstName, "Họ");
+                if (eln) clientErrs.firstName = eln;
+                const efn = validateVietnameseNamePart(lastName, "Tên");
+                if (efn) clientErrs.lastName = efn;
                 const ep = validateVietnamPhone(fd.get("phone"));
                 if (ep) clientErrs.phone = ep;
                 const eid = validateCitizenIdNumber(fd.get("idNumber"));
@@ -959,13 +997,9 @@ export default function HostOnboardingPage() {
                   representativeBack: backIdFile,
                 };
                 try {
-                  await saveDraftToApi(buildRegisterDraftApiPayload(merged, files));
                   patchDraft(payload);
-                  setRegisterDraftFiles((prev) => ({
-                    ...prev,
-                    representativeFront: frontIdFile,
-                    representativeBack: backIdFile,
-                  }));
+                  setRegisterDraftFiles(files);
+                  saveDraftFilesToDB(files);
                   setApiFieldErrors({});
                   setStep3FieldErrors({});
                   setOtpError("");
@@ -984,12 +1018,12 @@ export default function HostOnboardingPage() {
                     </label>
                     <input
                       id="host-reg-username"
-                      name="username"
+                      name="username" // <-- Phải là username
                       required
                       minLength={3}
                       maxLength={64}
-                      autoComplete="username"
-                      defaultValue={draft.username || ""}
+                      autoComplete="off" // <-- Tắt để trình duyệt không tự đồng bộ bậy bạ
+                      defaultValue={draft.username || ""} // <-- Gọi đúng biến username
                       className={inpClsStep3("username")}
                       placeholder="VD: nguyenvanan hoặc email@domain.com"
                       {...bindStep3ValidatedInput("username", validateHostUsername)}
@@ -1023,7 +1057,7 @@ export default function HostOnboardingPage() {
                       </div>
                       <div>
                         <label htmlFor="host-reg-firstname" className={fieldLabel}>
-                          Tên đệm và tên
+                          Tên
                         </label>
                         <input
                           id="host-reg-firstname"
@@ -1033,7 +1067,7 @@ export default function HostOnboardingPage() {
                           defaultValue={nameDefaults.firstName}
                           className={inpClsStep3("firstName", "mt-1.5")}
                           placeholder="Ví dụ: Văn An"
-                          {...bindStep3ValidatedInput("firstName", (v) => validateVietnameseNamePart(v, "Tên đệm và tên"))}
+                          {...bindStep3ValidatedInput("firstName", (v) => validateVietnameseNamePart(v, "Tên"))}
                         />
                         {step3Msg("firstName") ? (
                           <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("firstName")}</p>
@@ -1085,6 +1119,31 @@ export default function HostOnboardingPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* ===== ĐÂY CHÍNH LÀ Ô HỌ TÊN TRÊN CCCD MỚI ===== */}
+                  <div className="h-px bg-slate-100" aria-hidden />
+
+                  <div>
+                    <label htmlFor="host-reg-idname" className={`${fieldLabel} mb-1.5 block`}>
+                      Họ tên trên CCCD / CMND
+                    </label>
+                    <input
+                      id="host-reg-idname"
+                      name="idName"
+                      required
+                      autoComplete="name"
+                      defaultValue={draft.idName || draft.fullName || ""}
+                      className={inpClsStep3("idName")}
+                      placeholder="VD: NGUYEN VAN A"
+                      style={{ textTransform: "uppercase" }} // Thuộc tính này sẽ ép chữ tự động viết hoa
+                      {...bindStep3ValidatedInput("idName", (v) => validateVietnameseNamePart(v, "Họ tên trên CCCD"))}
+                    />
+                    {step3Msg("idName") ? (
+                      <p className="mt-1 text-xs font-medium text-red-600">{step3Msg("idName")}</p>
+                    ) : null}
+                  </div>
+                  {/* ============================================== */}
+
                 </div>
               </section>
 
@@ -1309,13 +1368,14 @@ export default function HostOnboardingPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="space-y-5 lg:col-span-8">
             <form
+              key="form-step-4"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
                 const companyRegistrationFile = fd.get("companyRegistrationFile");
                 const brandAvatarFile = fd.get("brandAvatarFile");
                 const payload = {
-                  companyName: fd.get("companyName"),
+                  businessName: fd.get("businessName"), // <-- Đổi thành businessName
                   taxCode: fd.get("taxCode"),
                   brandName: fd.get("brandName"),
                   district: fd.get("district"),
@@ -1330,7 +1390,7 @@ export default function HostOnboardingPage() {
                   brandAvatarFile instanceof File && brandAvatarFile.size > 0 ? brandAvatarFile : registerDraftFiles.brandAvatar;
                 setOtpError("");
                 if (!(nextCo instanceof File) || nextCo.size <= 0) {
-                  setOtpError("Vui lòng tải giấy phép kinh doanh.");
+                  setOtpError("Vui lòng tải giấy đăng ký doanh nghiệp.");
                   return;
                 }
                 if (!(nextAvatar instanceof File) || nextAvatar.size <= 0) {
@@ -1344,13 +1404,9 @@ export default function HostOnboardingPage() {
                   brandAvatar: nextAvatar,
                 };
                 try {
-                  await saveDraftToApi(buildRegisterDraftApiPayload(merged, nextFiles));
                   patchDraft(payload);
-                  setRegisterDraftFiles((prev) => ({
-                    ...prev,
-                    companyRegistration: nextCo,
-                    brandAvatar: nextAvatar,
-                  }));
+                  setRegisterDraftFiles(nextFiles);
+                  saveDraftFilesToDB(nextFiles); // <--- DÒNG MỚI ĐỂ LƯU ẢNH VÀO KHO
                   setApiFieldErrors({});
                   setOtpError("");
                   go(5);
@@ -1368,16 +1424,16 @@ export default function HostOnboardingPage() {
                     </label>
                     <input
                       id="host-step4-company"
-                      name="companyName"
+                      name="businessName" // <-- Đổi thành businessName
                       required
-                      autoComplete="organization"
-                      defaultValue={draft.companyName || ""}
-                      className={inpCls("companyName")}
-                      placeholder="Tên trên giấy đăng ký"
-                      onInput={() => clearApiField("companyName")}
+                      autoComplete="off"
+                      defaultValue={draft.businessName || ""} // <-- Đổi thành draft.businessName
+                      className={inpCls("businessName")} // <-- Đổi thành businessName
+                      placeholder="Tên trên giấy đăng ký kinh doanh"
+                      onInput={() => clearApiField("businessName")} // <-- Đổi thành businessName
                     />
-                    {apiFieldErrors.companyName ? (
-                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.companyName}</p>
+                    {apiFieldErrors.businessName ? ( // <-- Đổi thành businessName
+                      <p className="mt-1 text-xs font-medium text-red-600">{apiFieldErrors.businessName}</p>
                     ) : null}
                   </div>
 
@@ -1495,7 +1551,7 @@ export default function HostOnboardingPage() {
 
                 <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                   <div className="flex flex-col gap-2">
-                    <span className={fieldLabel}>Giấy phép kinh doanh</span>
+                    <span className={fieldLabel}>Giấy đăng ký doanh nghiệp</span>
                     <input
                       ref={companyRegInputRef}
                       id="host-step4-gpkd"
@@ -1505,12 +1561,12 @@ export default function HostOnboardingPage() {
                       onChange={onCompanyRegFileChange}
                       className="sr-only"
                       tabIndex={-1}
-                      aria-label="Tệp giấy phép kinh doanh"
+                      aria-label="Tệp giấy đăng ký doanh nghiệp"
                     />
                     <div
                       role="button"
                       tabIndex={0}
-                      aria-label="Tải giấy phép kinh doanh"
+                      aria-label="Tải giấy đăng ký doanh nghiệp"
                       onClick={() => companyRegInputRef.current?.click()}
                       onKeyDown={(ev) => {
                         if (ev.key === "Enter" || ev.key === " ") {
@@ -1704,6 +1760,7 @@ export default function HostOnboardingPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="space-y-5 lg:col-span-8">
             <form
+              key="form-step-5"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
@@ -1780,12 +1837,13 @@ export default function HostOnboardingPage() {
                     </label>
                     <input
                       id="host-step5-holder"
-                      name="bankHolder"
+                      name="bankHolder" // Tên biến duy nhất, không đụng hàng
                       required
-                      autoComplete="name"
-                      defaultValue={draft.bankHolder || draft.fullName || ""}
+                      autoComplete="off" // Cấm trình duyệt điền bậy
+                      defaultValue={draft.bankHolder || ""} // Chỉ lấy đúng dữ liệu của chính nó, không mượn ai hết
                       className={inpCls("bankHolder")}
-                      placeholder="Trùng khớp tên trên thẻ / sổ tiết kiệm"
+                      placeholder="VD: NGUYEN VAN A hoặc CONG TY TNHH ABC"
+                      style={{ textTransform: "uppercase" }} // Tự động viết hoa chữ
                       onInput={() => clearApiField("bankHolder")}
                     />
                     {apiFieldErrors.bankHolder ? (

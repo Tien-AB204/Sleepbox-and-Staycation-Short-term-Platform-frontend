@@ -12,6 +12,7 @@ import HostRouteGuard from "./HostRouteGuard";
 import InternalLoginPage from "../pages/auth/InternalLoginPage";
 import HostOnboardingLayout from "../layouts/HostOnboardingLayout";
 import HostOnboardingPage from "../pages/host/onboarding/HostOnboardingPage";
+import HostSetPasswordPage from "../pages/host/onboarding/HostSetPasswordPage";
 
 // Guest Pages
 import Home from "../pages/guest/Homepage";
@@ -30,7 +31,8 @@ import HostDashboard from "../pages/host/HostDashboard";
 import HostBookings from "../pages/host/HostBookings";
 import HostCalendar from "../pages/host/HostCalendar";
 import HostFacilities from "../pages/host/HostFacilities";
-import HostSleepboxes from "../pages/host/HostSleepboxes";
+import HostArea from "../pages/host/HostArea";
+import HostBoxManagement from "../pages/host/HostBoxManagement";
 import HostPricing from "../pages/host/HostPricing";
 import HostStaff from "../pages/host/HostStaff";
 import HostStatistics from "../pages/host/HostStatistics";
@@ -113,6 +115,9 @@ const AppRouter = () => (
         <Route path=":step" element={<HostOnboardingPage />} />
       </Route>
 
+      {/* Trang hứng link đổi mật khẩu từ Email trả về */}
+      <Route path="/host/set-password" element={<HostSetPasswordPage />} />
+
       {/* ==================================================== */}
       {/* 3. HOST ROUTES — sau khi hoàn tất đăng ký host (hoặc role host) */}
       {/* ==================================================== */}
@@ -130,7 +135,8 @@ const AppRouter = () => (
         <Route path="/host/bookings" element={<HostBookings />} />
         <Route path="/host/calendar" element={<HostCalendar />} />
         <Route path="/host/facilities" element={<HostFacilities />} />
-        <Route path="/host/sleepboxes" element={<HostSleepboxes />} />
+        <Route path="/host/area" element={<HostArea />} />
+        <Route path="/host/sleepbox/:areaId" element={<HostBoxManagement />} />
         <Route path="/host/pricing" element={<HostPricing />} />
         <Route path="/host/staff" element={<HostStaff />} />
         <Route path="/host/statistics" element={<HostStatistics />} />

@@ -8,3 +8,4 @@ export const HOST_STEPS = [
   { n: 6, label: "Chờ duyệt", short: "Duyệt", icon: "hourglass_top" },
   { n: 7, label: "Mật khẩu", short: "Mật khẩu", icon: "lock" },
 ];
+

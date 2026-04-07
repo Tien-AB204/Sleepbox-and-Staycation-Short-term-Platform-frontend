@@ -27,7 +27,7 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     setIsLoadingList(true);
     try {
-      const response = await axios.get("/moderator/users", {
+      const response = await axios.get("moderator/user/list", {
         params: {
           Keyword: searchTerm || undefined,
           Role: roleFilter !== "all" ? roleFilter : undefined,
@@ -70,7 +70,7 @@ export default function UserManagement() {
     setUserDetail(null);
     setDetailTab("account");
     try {
-      const response = await axios.get(`/moderator/users/${userId}`);
+      const response = await axios.get(`/moderator/user/${userId}`);
       setUserDetail(response.data?.data || response.data);
     } catch (error) {
       console.error("Lỗi khi xem chi tiết user:", error);
@@ -101,7 +101,7 @@ export default function UserManagement() {
       // ===== LOGIC KHÓA TÀI KHOẢN (Đã có API) =====
       setIsSubmitting(true);
       try {
-        await axios.put(`/moderator/users/${selectedUser.userId}/suspend`, {
+        await axios.put(`/moderator/user/${selectedUser.userId}/suspend`, {
           reason: actionReason
         });
         alert(`Đã ĐÌNH CHỈ tài khoản ${selectedUser.username} thành công!`);

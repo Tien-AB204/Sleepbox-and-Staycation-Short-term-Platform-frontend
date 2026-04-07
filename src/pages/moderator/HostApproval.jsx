@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// Đảm bảo bạn đã config axios instance trong thư mục config, nếu chưa có thì dùng: import axios from "axios";
 import axios from "../../config/axios"; 
 
 export default function HostApproval() {
@@ -21,27 +20,27 @@ export default function HostApproval() {
   const fetchDrafts = async () => {
     setIsLoadingList(true);
     try {
-      // Truyền params dựa theo Swagger: page, pageSize, status
+      console.log("🟢 [GET LIST] Đang fetch danh sách drafts với status: pending...");
       const response = await axios.get("moderator/host-drafts", {
         params: {
           page: 1,
-          pageSize: 10,
-          reviewStatus: "pending" // Chỉ lấy các hồ sơ đang chờ duyệt
+          pageSize: 20,
+          status: "pending" 
         }
       });
       
-      // Xử lý an toàn dữ liệu trả về (tùy thuộc backend bọc trong data hay items)
       const draftList = response.data?.data || response.data?.items || response.data || [];
+      console.log("🟢 [GET LIST] Danh sách nhận được:", draftList);
+      
       setRequests(draftList);
       
-      // Nếu danh sách không rỗng và chưa chọn ai, tự động chọn người đầu tiên
       if (draftList.length > 0 && !selectedReq) {
         handleSelectDraft(draftList[0].draftId || draftList[0].id);
       } else if (draftList.length === 0) {
         setSelectedReq(null);
       }
     } catch (error) {
-      console.error("Lỗi khi tải danh sách host drafts:", error);
+      console.error("🔴 [GET LIST] Lỗi khi tải danh sách host drafts:", error);
     } finally {
       setIsLoadingList(false);
     }
@@ -59,11 +58,14 @@ export default function HostApproval() {
     if (!draftId) return;
     setIsLoadingDetail(true);
     try {
+      console.log(`🔵 [GET DETAIL] Đang lấy chi tiết draftId: ${draftId}...`);
       const response = await axios.get(`moderator/host-draft/${draftId}`);
       const detailData = response.data?.data || response.data;
+      console.log("🔵 [GET DETAIL] Chi tiết hồ sơ nhận được:", detailData);
+      
       setSelectedReq(detailData);
     } catch (error) {
-      console.error("Lỗi khi tải chi tiết hồ sơ:", error);
+      console.error("🔴 [GET DETAIL] Lỗi khi tải chi tiết hồ sơ:", error);
       alert("Không thể tải chi tiết hồ sơ này!");
     } finally {
       setIsLoadingDetail(false);
@@ -80,25 +82,27 @@ export default function HostApproval() {
     try {
       const draftId = selectedReq.draftId || selectedReq.id;
       
-      // Payload dựa theo Swagger
       const payload = {
-        action: actionStr, // "Approved" hoặc "Rejected" (Tùy định nghĩa enum của BE)
+        action: actionStr,
         rejectReason: reason,
-        documentReviews: [] // Mảng trống nếu duyệt cả cục, hoặc tùy BE bắt buộc
+        documentReviews: [] 
       };
 
+      console.log(`🔥 [POST REVIEW] Đang gửi phán quyết "${actionStr}" cho draftId: ${draftId}`, payload);
       await axios.post(`moderator/host-draft/${draftId}/review`, payload);
+      console.log(`🔥 [POST REVIEW] Gửi thành công!`);
       
-      alert(`Đã ${actionStr === "Approved" ? "PHÊ DUYỆT" : "YÊU CẦU CẬP NHẬT LẠI"} thành công!`);
+      alert(`Đã ${actionStr === "approve" ? "PHÊ DUYỆT" : "YÊU CẦU CẬP NHẬT LẠI"} thành công!`);
       
-      // Đóng modal, reset form, load lại danh sách
       setIsRejectModalOpen(false);
       setRejectReason("");
       setSelectedReq(null);
+      
+      // Load lại danh sách sau khi duyệt
       fetchDrafts(); 
       
     } catch (error) {
-      console.error("Lỗi khi gửi phán quyết:", error);
+      console.error("🔴 [POST REVIEW] Lỗi khi gửi phán quyết:", error);
       alert("Có lỗi xảy ra khi xử lý hệ thống.");
     } finally {
       setIsSubmitting(false);
@@ -106,8 +110,8 @@ export default function HostApproval() {
   };
 
   const handleApprove = () => {
-    if(window.confirm("Bạn xác nhận các giấy tờ này hoàn toàn hợp lệ?")) {
-      submitReview("Approved"); 
+    if(window.confirm("Bạn xác nhận các giấy tờ này hoàn toàn hợp lệ và phê duyệt Host này?")) {
+      submitReview("approve"); 
     }
   };
 
@@ -116,21 +120,25 @@ export default function HostApproval() {
       alert("Vui lòng nhập lý do từ chối để Host cập nhật lại giấy tờ!");
       return;
     }
-    submitReview("Rejected", rejectReason);
+    submitReview("Rejected", rejectReason); // Lưu ý: check lại BE xem enum là 'Rejected' hay 'reject' nhé sếp
   };
 
-  // =========================================================================
-  // HELPER LẤY URL ẢNH TỪ MẢNG DOCUMENTS (Nếu BE trả về dạng mảng)
-  // =========================================================================
-  const getDocumentUrl = (docs, keyword) => {
-    if (!docs) return "https://placehold.co/600x400/f8fafc/94a3b8?text=Chưa+cập+nhật";
-    // Nếu BE trả thẳng object { idFront: '...', idBack: '...' }
-    if (!Array.isArray(docs)) return docs[keyword] || "https://placehold.co/600x400/f8fafc/94a3b8?text=Chưa+cập+nhật";
-    
-    // Nếu BE trả về array [{ documentType: 'ID_FRONT', url: '...' }]
-    const doc = docs.find(d => d.documentType?.toUpperCase().includes(keyword.toUpperCase()));
-    return doc?.url || "https://placehold.co/600x400/f8fafc/94a3b8?text=Chưa+cập+nhật";
+  // Helper lấy ảnh Giấy Phép Kinh Doanh từ mảng documents
+  const getCompanyRegDoc = (docs) => {
+    if (!Array.isArray(docs)) return null;
+    const doc = docs.find(d => d.documentType === "COMPANY_REGISTRATION");
+    return doc?.attachments?.[0] || null;
   };
+
+  const placeholderImg = "https://placehold.co/600x400/f8fafc/94a3b8?text=Chưa+cập+nhật";
+  
+  // Rút gọn biến payload để code sạch hơn
+  const payloadData = selectedReq?.payload || {};
+
+  // KIỂM TRA TRẠNG THÁI HIỆN TẠI ĐỂ CHẶN NÚT DUYỆT
+  // (Phòng trường hợp BE trả về bản ghi cũ đã duyệt rồi)
+  const currentStatus = String(selectedReq?.status || selectedReq?.reviewStatus || payloadData?.reviewStatus || "pending").toLowerCase();
+  const isNotPending = currentStatus !== "pending" && currentStatus !== "";
 
   return (
     <div className="h-full flex flex-col">
@@ -138,7 +146,7 @@ export default function HostApproval() {
       <div className="mb-6 flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Duyệt Hồ Sơ Host (KYC)</h1>
-          <p className="text-sm text-slate-500 mt-1">Kiểm tra danh tính và giấy tờ tùy thân của đối tác mới.</p>
+          <p className="text-sm text-slate-500 mt-1">Kiểm tra thông tin cá nhân, doanh nghiệp và ngân hàng của đối tác.</p>
         </div>
         <div className="flex bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
           <button className="px-4 py-1.5 text-sm font-bold bg-slate-100 text-slate-800 rounded-md flex items-center gap-2">
@@ -148,7 +156,7 @@ export default function HostApproval() {
         </div>
       </div>
 
-      {/* KHU VỰC MASTER - DETAIL (CHIA 2 CỘT) */}
+      {/* KHU VỰC MASTER - DETAIL */}
       <div className="flex-1 flex gap-6 min-h-0 overflow-hidden">
         
         {/* CỘT TRÁI: DANH SÁCH YÊU CẦU */}
@@ -158,7 +166,7 @@ export default function HostApproval() {
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
               <input 
                 type="text" 
-                placeholder="Tìm tên, CCCD..." 
+                placeholder="Tìm tên, email..." 
                 className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-[#4059AD] focus:ring-1 focus:ring-[#4059AD]/20 transition-all"
               />
             </div>
@@ -166,13 +174,14 @@ export default function HostApproval() {
           
           <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2 relative">
             {isLoadingList ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/80">
+              <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
                 <span className="material-symbols-outlined animate-spin text-3xl text-[#4059AD]">progress_activity</span>
               </div>
             ) : requests.length > 0 ? (
               requests.map(req => {
                 const reqId = req.draftId || req.id;
                 const isSelected = selectedReq && (selectedReq.draftId === reqId || selectedReq.id === reqId);
+                const pLoad = req.payload || {};
                 
                 return (
                   <div 
@@ -192,9 +201,9 @@ export default function HostApproval() {
                         {req.createdAt ? new Date(req.createdAt).toLocaleDateString('vi-VN') : 'Mới đây'}
                       </span>
                     </div>
-                    <h3 className="font-bold text-slate-900 truncate">{req.fullName || req.name || "Chưa cập nhật tên"}</h3>
+                    {/* <h3 className="font-bold text-slate-900 truncate">{pLoad.representative_Id_Name || pLoad.username || "Chưa cập nhật tên"}</h3> */}
                     <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">mail</span> {req.email || "Không có email"}
+                      <span className="material-symbols-outlined text-[14px]">mail</span> {req.email || pLoad.email || "Không có email"}
                     </p>
                   </div>
                 );
@@ -221,94 +230,161 @@ export default function HostApproval() {
               {/* Header Chi tiết */}
               <div className="p-6 border-b border-slate-100 shrink-0 bg-slate-50/50 flex justify-between items-start">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-[#4059AD] text-white flex items-center justify-center font-bold text-2xl shadow-md">
-                    {(selectedReq.fullName || selectedReq.name || "A").charAt(0).toUpperCase()}
+                  <div className="w-14 h-14 rounded-full bg-[#4059AD] text-white flex items-center justify-center font-bold text-2xl shadow-md overflow-hidden">
+                    {payloadData.brandAvatarUrl ? (
+                        <img src={payloadData.brandAvatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                        (payloadData.representativeIdName || "A").charAt(0).toUpperCase()
+                    )}
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-slate-900">{selectedReq.fullName || selectedReq.name || "Chưa cập nhật tên"}</h2>
-                    <p className="text-sm text-slate-500 mt-0.5">{selectedReq.email} {selectedReq.phone ? `• ${selectedReq.phone}` : ''}</p>
+                    <h2 className="text-xl font-black text-slate-900">{payloadData.representativeIdName || payloadData.username || "Chưa có tên"}</h2>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                      {selectedReq.email} {payloadData.phone ? ` • ${payloadData.phone}` : ''}
+                    </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã định danh</p>
-                  <p className="text-sm font-black text-[#4059AD]">{selectedReq.draftId || selectedReq.id}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã định danh Draft</p>
+                  <p className="text-sm font-black text-[#4059AD]">{selectedReq.draftId}</p>
                 </div>
               </div>
 
-              {/* Nội dung đối chiếu */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-8 pb-28">
-                <div className="grid grid-cols-2 gap-8">
-                  
-                  {/* Thông tin khai báo */}
-                  <div className="col-span-2 md:col-span-1 space-y-5">
-                    <h3 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2">Thông tin khai báo</h3>
+              {/* Nội dung chi tiết cuộn được */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pb-28 space-y-8">
+                
+                {/* THÔNG BÁO NẾU HỒ SƠ ĐÃ XỬ LÝ (KHÔNG CÒN PENDING) */}
+                {isNotPending && (
+                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center gap-3 text-amber-800">
+                    <span className="material-symbols-outlined text-2xl">info</span>
                     <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Họ và tên</p>
-                      <p className="font-bold text-slate-800">{selectedReq.fullName || selectedReq.name || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Số CMND/CCCD</p>
-                      <p className="font-black text-[#4059AD] text-lg tracking-widest">{selectedReq.idCardNumber || selectedReq.identityCard || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Địa chỉ thường trú</p>
-                      <p className="font-medium text-slate-800">{selectedReq.address || "—"}</p>
+                      <p className="font-bold">Hồ sơ này đã được xử lý</p>
+                      <p className="text-sm mt-0.5">Trạng thái hiện tại: <span className="uppercase font-bold">{currentStatus}</span>. Bạn không thể thay đổi phán quyết nữa.</p>
                     </div>
                   </div>
+                )}
 
-                  {/* Ảnh Selfie đối chiếu */}
-                  <div className="col-span-2 md:col-span-1 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Ảnh chân dung xác thực</p>
-                    <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-lg relative cursor-zoom-in">
-                      <img 
-                        src={getDocumentUrl(selectedReq.documents, 'SELFIE')} 
-                        alt="Selfie" 
-                        className="w-full h-full object-cover" 
-                      />
+                {/* 1. THÔNG TIN CÁ NHÂN & CCCD */}
+                <section>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 border-b-2 border-slate-100 pb-2 mb-4 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[#4059AD]">person</span>
+                        Thông tin người đại diện
+                    </h3>
+                    <div className="grid grid-cols-2 gap-6 mb-4">
+                        <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Họ tên trên CCCD/CMND</p>
+                            <p className="font-bold text-slate-800">{payloadData.representativeIdName || "—"}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Số CMND/CCCD</p>
+                            <p className="font-black text-[#4059AD] text-lg tracking-widest">{payloadData.representativeIdNumber || "—"}</p>
+                        </div>
                     </div>
-                  </div>
-
-                  {/* Giấy tờ mặt trước & sau */}
-                  <div className="col-span-2 mt-4">
-                    <h3 className="text-sm font-bold text-slate-900 border-b border-slate-200 pb-2 mb-4">Hình ảnh CMND/CCCD</h3>
+                    
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col gap-2">
-                        <p className="text-xs font-bold text-slate-500 text-center">Mặt trước</p>
-                        <div className="aspect-[1.6/1] rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-zoom-in group relative bg-slate-100">
+                        <p className="text-xs font-bold text-slate-500 text-center">Mặt trước CCCD</p>
+                        <div className="aspect-[1.6/1] rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-zoom-in bg-slate-100">
                           <img 
-                            src={getDocumentUrl(selectedReq.documents, 'FRONT')} 
-                            alt="ID Front" 
-                            className="w-full h-full object-contain group-hover:scale-105 transition-transform" 
+                            src={payloadData.representativeFrontUrl || placeholderImg} 
+                            alt="Mặt trước CCCD" 
+                            className="w-full h-full object-contain hover:scale-105 transition-transform" 
                           />
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
-                        <p className="text-xs font-bold text-slate-500 text-center">Mặt sau</p>
-                        <div className="aspect-[1.6/1] rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-zoom-in group relative bg-slate-100">
+                        <p className="text-xs font-bold text-slate-500 text-center">Mặt sau CCCD</p>
+                        <div className="aspect-[1.6/1] rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-zoom-in bg-slate-100">
                           <img 
-                            src={getDocumentUrl(selectedReq.documents, 'BACK')} 
-                            alt="ID Back" 
-                            className="w-full h-full object-contain group-hover:scale-105 transition-transform" 
+                            src={payloadData.representativeBackUrl || placeholderImg} 
+                            alt="Mặt sau CCCD" 
+                            className="w-full h-full object-contain hover:scale-105 transition-transform" 
                           />
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                </div>
+                </section>
+
+                {/* 2. THÔNG TIN DOANH NGHIỆP / THƯƠNG HIỆU */}
+                <section>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 border-b-2 border-slate-100 pb-2 mb-4 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[#4059AD]">store</span>
+                        Doanh nghiệp & Thương hiệu
+                    </h3>
+                    <div className="grid grid-cols-2 gap-6 mb-4">
+                        <div className="col-span-2 md:col-span-1">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tên doanh nghiệp</p>
+                            <p className="font-bold text-slate-800">{payloadData.businessName || "—"}</p>
+                        </div>
+                        <div className="col-span-2 md:col-span-1">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Mã số thuế</p>
+                            <p className="font-bold text-slate-800">{payloadData.taxCode || "—"}</p>
+                        </div>
+                        <div className="col-span-2">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Địa chỉ trụ sở</p>
+                            <p className="font-medium text-slate-800">
+                                {[payloadData.addressDetail, payloadData.addressWard, payloadData.addressDistrict].filter(Boolean).join(", ") || "—"}
+                            </p>
+                        </div>
+                        <div className="col-span-2 md:col-span-1">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Tên thương hiệu</p>
+                            <p className="font-bold text-[#4059AD]">{payloadData.brandName || "—"}</p>
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-2">
+                        <p className="text-xs font-bold text-slate-500">Giấy phép kinh doanh</p>
+                        <div className="h-40 rounded-xl overflow-hidden border border-slate-200 shadow-sm cursor-zoom-in bg-slate-100">
+                          <img 
+                            src={getCompanyRegDoc(payloadData.documents) || placeholderImg} 
+                            alt="GPKD" 
+                            className="w-full h-full object-contain hover:scale-105 transition-transform" 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                </section>
+
+                {/* 3. THÔNG TIN THANH TOÁN */}
+                <section>
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-800 border-b-2 border-slate-100 pb-2 mb-4 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[#4059AD]">account_balance</span>
+                        Thông tin Thanh toán
+                    </h3>
+                    <div className="grid grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Ngân hàng</p>
+                            <p className="font-bold text-slate-800">{payloadData.bankName || "—"}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Phương thức</p>
+                            <p className="font-bold text-slate-800">{payloadData.paymentMethod || "—"}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Số tài khoản</p>
+                            <p className="font-black text-[#4059AD] text-lg tracking-widest">{payloadData.accountNumber || "—"}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Chủ tài khoản</p>
+                            <p className="font-bold text-slate-800 uppercase">{payloadData.accountName || "—"}</p>
+                        </div>
+                    </div>
+                </section>
+
               </div>
 
-              {/* ACTION BAR */}
+              {/* ACTION BAR (Chặn nếu isNotPending = true) */}
               <div className="absolute bottom-0 left-0 w-full bg-white border-t border-slate-200 p-5 flex justify-end gap-3 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
                 <button 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isNotPending}
                   onClick={() => setIsRejectModalOpen(true)}
                   className="px-6 py-2.5 rounded-xl border-2 border-red-100 text-red-600 font-bold text-sm hover:bg-red-50 hover:border-red-200 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined text-[18px]">cancel</span> Yêu cầu cập nhật lại
                 </button>
                 <button 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isNotPending}
                   onClick={handleApprove}
                   className="px-8 py-2.5 rounded-xl bg-[#059669] text-white font-bold text-sm hover:bg-[#047857] shadow-lg shadow-green-200 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -339,13 +415,13 @@ export default function HostApproval() {
               <h2 className="text-xl font-black text-slate-900">Yêu cầu cập nhật lại</h2>
             </div>
             <p className="text-sm text-slate-600 mb-4">
-              Vui lòng cung cấp lý do để người dùng chụp và tải lên lại giấy tờ chính xác hơn.
+              Vui lòng cung cấp lý do để người dùng cập nhật lại dữ liệu (VD: Sai số CCCD, ảnh lóa sáng, sai Tên doanh nghiệp...).
             </p>
             
             <textarea 
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
-              placeholder="Ví dụ: Ảnh CMND bị mờ, lóa sáng, ảnh chân dung không rõ mặt..."
+              placeholder="Nhập chi tiết lý do từ chối..."
               className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 min-h-[120px] outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 transition-all text-sm font-medium resize-none mb-6"
             ></textarea>
 
