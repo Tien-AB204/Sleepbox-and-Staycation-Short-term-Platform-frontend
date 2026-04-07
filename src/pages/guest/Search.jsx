@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import boxHubLogo from "../../assets/images/BOXHUB.png";
+import boxHubLogo from "../../assets/images/logo.png";
 import { useAuthContext } from "../../contexts/AuthContext";
 import AuthModal from "../auth/AuthModal";
 

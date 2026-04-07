@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../contexts/AuthContext";
 
-import boxHubLogo from "../../assets/images/BOXHUB.png";
+import boxHubLogo from "../../assets/images/logo.png";
 import flagVN from "../../assets/images/vietnamFlag.png";
 import flagEN from "../../assets/images/englishFlag.png";
 

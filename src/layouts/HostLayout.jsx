@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink, Outlet, Link } from "react-router-dom";
 import { useAuthContext } from "../contexts/AuthContext";
-import boxhubLogo from "../assets/images/BOXHUB.png";
+import boxhubLogo from "../assets/images/logo.png";
 
 const navItems = [
   { to: "/host/dashboard", label: "Bảng điều khiển", icon: "dashboard" },
@@ -28,12 +28,10 @@ const HostLayout = () => {
     <div className="flex min-h-screen bg-background-light font-display text-slate-900">
       <aside className="fixed inset-y-0 left-0 z-20 flex w-64 flex-col border-r border-primary/10 bg-white">
         <div className="flex items-center gap-3 p-6">
-          <Link to="/host/dashboard" className="shrink-0 transition-opacity hover:opacity-90">
-            <img src={boxhubLogo} alt="BoxHub" className="h-7 w-auto object-contain" />
-          </Link>
-          <div className="flex flex-col border-l border-slate-200 pl-3">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Host Center</p>
-          </div>
+          <img src={boxhubLogo} alt="BoxHub" className="h-8 object-contain" />
+          <span className="rounded bg-primary/10 px-2 py-0.5 text-[11px] font-bold tracking-wider text-primary">
+            HOST
+          </span>
         </div>
 
         <nav className="host-custom-scrollbar flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-2">

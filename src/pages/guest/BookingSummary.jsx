@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../../contexts/AuthContext";
 
 // Đảm bảo đường dẫn này đúng với cấu trúc thư mục của bạn
-import boxHubLogo from "../../assets/images/BOXHUB.png";
+import boxHubLogo from "../../assets/images/logo.png";
 import AuthModal from "../auth/AuthModal";
 
 const BookingSummary = () => {

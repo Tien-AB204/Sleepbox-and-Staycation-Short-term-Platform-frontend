@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import { useInternalLogout } from "../hooks/useInternalLogout";
-import boxhubLogo from "../assets/images/BOXHUB.png";
+import boxhubLogo from "../assets/images/logo.png";
 
 const ModeratorLayout = () => {
   const signOutInternal = useInternalLogout();
@@ -9,9 +9,11 @@ const ModeratorLayout = () => {
   return (
     <div className="flex min-h-screen">
       <aside className="flex min-h-screen w-48 flex-col bg-yellow-600 p-4 text-white">
-        <div className="mb-6 flex flex-col gap-1">
-          <img src={boxhubLogo} alt="BoxHub" className="h-6 w-auto object-contain brightness-0 invert self-start" />
-          <div className="text-[10px] font-bold uppercase tracking-wider text-white/80">Moderator</div>
+        <div className="mb-6 flex flex-col items-center justify-center gap-2 rounded-lg bg-white p-3">
+          <img src={boxhubLogo} alt="BoxHub" className="h-8 object-contain" />
+          <span className="rounded bg-yellow-600/20 px-2 py-0.5 text-[10px] font-bold tracking-wider text-yellow-800">
+            MODERATOR
+          </span>
         </div>
         <ul className="space-y-2">
           <li>User Management</li>
