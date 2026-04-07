@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { login as loginService } from "../../services/authService";
 import { useAuthContext } from "../../contexts/AuthContext";
+import boxHubLogo from "../../assets/images/BOXHUB.png";
 
 /** Sau đăng nhập — mọi role (guest / host / nội bộ) */
 const ROLE_HOME = {
@@ -91,9 +92,7 @@ export default function InternalLoginPage() {
 
         {/* Top Logo */}
         <div className="relative z-10">
-          <div className="text-2xl font-black tracking-tight text-[#1A1130]">
-            BoxHub
-          </div>
+          <img src={boxHubLogo} alt="BoxHub" className="h-8 w-auto object-contain" />
         </div>
 
         {/* Middle Content */}
@@ -132,9 +131,7 @@ export default function InternalLoginPage() {
 
         {/* Mobile Logo (only shows when left panel is hidden) */}
         <div className="mb-12 mt-4 md:hidden">
-          <div className="text-2xl font-black tracking-tight text-[#1A1130]">
-            BoxHub
-          </div>
+          <img src={boxHubLogo} alt="BoxHub" className="h-8 w-auto object-contain" />
         </div>
 
         <div className="flex flex-1 flex-col justify-center">
