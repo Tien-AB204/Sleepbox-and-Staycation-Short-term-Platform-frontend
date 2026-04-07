@@ -4,6 +4,7 @@ import { login as loginService, register as registerService } from "../../servic
 import { useAuthContext } from "../../contexts/AuthContext";
 // 1. IMPORT HOOK ĐĂNG NHẬP GOOGLE
 import { useGoogleLogin } from '@react-oauth/google';
+import boxHubLogo from "../../assets/images/BOXHUB.png";
 
 const AuthModal = ({ isOpen, onClose, initialMode = "login" }) => {
   const navigate = useNavigate();
@@ -183,11 +184,14 @@ const AuthModal = ({ isOpen, onClose, initialMode = "login" }) => {
           <span className="material-symbols-outlined">close</span>
         </button>
 
-        <h2 className="text-2xl font-extrabold mb-6 text-center text-[#1e1b4b]">
-          {mode === "login" && "Đăng nhập BoxHub"}
-          {mode === "register" && "Đăng ký BoxHub"}
-          {mode === "forgotPassword" && "Quên Mật Khẩu"}
-        </h2>
+        <div className="flex flex-col items-center justify-center mb-6">
+          <img src={boxHubLogo} alt="BoxHub" className="h-8 w-auto object-contain mb-4" />
+          <h2 className="text-2xl font-extrabold text-center text-[#1e1b4b]">
+            {mode === "login" && "Đăng nhập"}
+            {mode === "register" && "Đăng ký"}
+            {mode === "forgotPassword" && "Quên Mật Khẩu"}
+          </h2>
+        </div>
 
         {/* CÁC FORM GIỮ NGUYÊN HOÀN TOÀN BÊN TRONG NÀY */}
         {mode === "login" && (

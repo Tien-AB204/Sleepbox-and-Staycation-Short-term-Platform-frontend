@@ -2,6 +2,7 @@ import React from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuthContext } from "../contexts/AuthContext";
 import { useInternalLogout } from "../hooks/useInternalLogout";
+import boxHubLogo from "../assets/images/BOXHUB.png";
 
 const ADMIN_AVATAR_URL =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuCiPE7Vtr_12Smk8-Nlm-iDZwWzQNM27s_-yjnKM9n7SVFVpq-Fsswg9hKw-4yvmEn8MVjC4j1E_oX0Cy2n_2eN13RNBLoY86E7ubEszBf0Govmuef-lCv8q8uWWRnRRuqUA8kINQxzlsItP_TCyGh5_fw2FnLC_D7jfS64B0Y1OD_udQDbVFB0FoIySLKKyasgC9FNMc9s1n7fZzNifhmg2WJiDr8TjsMGszEybExYOo85_MrWdTpQ7fZPFXJfjinuj7J2h3B8LQYD";
@@ -27,12 +28,9 @@ export default function AdminLayout() {
     <div className="flex min-h-screen bg-background-light font-display text-slate-900">
       <aside className="fixed inset-y-0 left-0 z-20 flex w-64 flex-col border-r border-primary/10 bg-white">
         <div className="flex items-center gap-3 p-6">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
-            <span className="material-symbols-outlined text-2xl">inventory_2</span>
-          </div>
+          <img src={boxHubLogo} alt="BoxHub" className="h-8 w-auto object-contain" />
           <div className="flex flex-col">
-            <h1 className="text-base font-bold leading-tight text-primary">BoxHub Admin</h1>
-            <p className="text-xs text-slate-500">System administration</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Admin Portal</p>
           </div>
         </div>
 
