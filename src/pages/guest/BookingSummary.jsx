@@ -33,7 +33,7 @@ const BookingSummary = () => {
         <div className="w-full max-w-[1200px] px-4 lg:px-0 py-4 flex items-center justify-between">
           
           <Link to="/" className="flex items-center gap-2 text-[#351a5b]">
-            <img src={boxHubLogo} alt="BoxHub Logo" className="h-8 md:h-9 w-auto object-contain" />
+            <img src={boxHubLogo} alt="BoxHub Logo" className="h-10 w-auto object-contain" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">

@@ -3,7 +3,8 @@ import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useAuthContext } from "../contexts/AuthContext";
 
 // IMPORT HÌNH ẢNH
-import boxHubLogo from "../assets/images/BOXHUB.png";
+import boxHubLogo from "../assets/images/logo.png";
+import boxHubText from "../assets/images/BOXHUB.png";
 import flagVN from "../assets/images/vietnamFlag.png";
 import flagEN from "../assets/images/englishFlag.png";
 
@@ -42,18 +43,18 @@ const GuestLayout = () => {
           
           <Link to="/" className="flex items-center hover:opacity-90 transition-opacity">
             <img
-              src={boxHubLogo}
+              src={boxHubText}
               alt="BoxHub"
-              className="h-8 md:h-9 w-auto object-contain"
+              className="h-8 w-auto object-contain relative z-10 shrink-0"
             />
           </Link>
           {/* ========================================================== */}
 
           {/* CỤM PHẢI: ICONS VÀ CHỨC NĂNG */}
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-1 md:gap-3">
             {/* App (Smartphone) */}
-            <button className="flex h-10 w-10 items-center justify-center rounded-full text-[#1A1130] transition hover:bg-slate-100">
-              <span className="material-symbols-outlined text-[22px] leading-none">
+            <button className="w-10 h-10 hover:bg-slate-100 rounded-full transition text-[#4059AD] flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px] leading-none">
                 smartphone
               </span>
             </button>
@@ -65,26 +66,26 @@ const GuestLayout = () => {
             >
               <button
                 onClick={() => setIsLangOpen(!isLangOpen)}
-                className="flex h-10 w-10 items-center justify-center rounded-full outline-none transition hover:bg-slate-100"
+                className="w-10 h-10 hover:bg-slate-100 rounded-full transition flex items-center justify-center outline-none"
               >
                 <img
                   src={lang === "vi" ? flagVN : flagEN}
                   alt="lang"
-                  className="h-[22px] w-[22px] rounded-full object-cover shadow-sm"
+                  className="w-6 h-6 rounded-full object-cover border border-slate-200 shadow-sm"
                 />
               </button>
               {isLangOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-40 overflow-hidden rounded-xl border border-slate-100 bg-white py-2 shadow-lg">
+                <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-50 py-2">
                   <button
                     onClick={() => {
                       setLang("vi");
                       setIsLangOpen(false);
                     }}
-                    className="flex w-full items-center gap-3 px-4 py-2 transition hover:bg-slate-50"
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition"
                   >
                     <img
                       src={flagVN}
-                      className="h-5 w-5 rounded-full object-cover"
+                      className="w-5 h-5 rounded-full object-cover"
                       alt="VN"
                     />{" "}
                     <span className="text-sm font-medium text-slate-700">
@@ -96,11 +97,11 @@ const GuestLayout = () => {
                       setLang("en");
                       setIsLangOpen(false);
                     }}
-                    className="flex w-full items-center gap-3 px-4 py-2 transition hover:bg-slate-50"
+                    className="w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-50 transition"
                   >
                     <img
                       src={flagEN}
-                      className="h-5 w-5 rounded-full object-cover"
+                      className="w-5 h-5 rounded-full object-cover"
                       alt="EN"
                     />{" "}
                     <span className="text-sm font-medium text-slate-700">
@@ -112,26 +113,26 @@ const GuestLayout = () => {
             </div>
 
             {/* Trợ giúp */}
-            <button className="flex h-10 w-10 items-center justify-center rounded-full text-[#1A1130] transition hover:bg-slate-100">
-              <span className="material-symbols-outlined text-[22px] leading-none">
+            <button className="w-10 h-10 hover:bg-slate-100 rounded-full transition text-[#4059AD] flex items-center justify-center">
+              <span className="material-symbols-outlined text-[24px] leading-none">
                 help
               </span>
             </button>
 
             {/* Thông báo */}
             {user && (
-              <Link to="/notifications" className="relative flex h-10 w-10 items-center justify-center rounded-full text-[#1A1130] transition hover:bg-slate-100">
-                <span className="material-symbols-outlined text-[22px] leading-none">
+              <Link to="/notifications" className="w-10 h-10 hover:bg-slate-100 rounded-full transition text-[#4059AD] relative flex items-center justify-center">
+                <span className="material-symbols-outlined text-[24px] leading-none">
                   notifications
                 </span>
-                <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full border-2 border-white bg-[#FA744D]"></span>
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-[#FA744D] rounded-full border-2 border-white"></span>
               </Link>
             )}
 
             {/* Trở thành Host (Nút text) */}
             <Link
               to="/host/register/1"
-              className="ml-1 hidden rounded-full px-4 py-2 text-[15px] font-bold text-[#352166] transition hover:bg-slate-50 md:flex"
+              className="hidden md:flex font-bold text-sm text-[#4059AD] hover:bg-slate-50 px-4 py-2 rounded-full transition ml-1"
             >
               Trở thành host
             </Link>
@@ -141,9 +142,9 @@ const GuestLayout = () => {
               <div className="relative ml-1 flex items-center" ref={profileRef}>
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border border-transparent outline-none transition hover:border-slate-200 hover:bg-slate-100"
+                  className="w-10 h-10 hover:bg-slate-100 rounded-full transition flex items-center justify-center outline-none border border-transparent hover:border-slate-200"
                 >
-                  <span className="material-symbols-outlined text-[26px] leading-none text-[#1A1130]">
+                  <span className="material-symbols-outlined text-[28px] leading-none text-[#4059AD]">
                     account_circle
                   </span>
                 </button>
@@ -231,13 +232,13 @@ const GuestLayout = () => {
                 )}
               </div>
             ) : (
-              <div className="ml-2 flex items-center gap-2">
+              <div className="flex items-center gap-2 ml-2">
                 <button
                   onClick={() => {
                     setAuthMode("login");
                     setIsAuthModalOpen(true);
                   }}
-                  className="rounded-full px-4 py-2 text-[15px] font-bold text-[#352166] transition hover:bg-slate-50"
+                  className="text-sm font-bold text-[#4059AD] hover:bg-slate-50 px-4 py-2 rounded-full transition"
                 >
                   Đăng nhập
                 </button>
@@ -246,7 +247,7 @@ const GuestLayout = () => {
                     setAuthMode("register");
                     setIsAuthModalOpen(true);
                   }}
-                  className="rounded-full bg-[#352166] px-5 py-2.5 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#2A1A52]"
+                  className="text-sm font-bold bg-[#4059AD] text-white px-5 py-2 rounded-full hover:bg-[#32488f] transition shadow-sm"
                 >
                   Đăng ký
                 </button>
@@ -269,16 +270,16 @@ const GuestLayout = () => {
               <h4 className="font-bold mb-4 text-slate-800">Hỗ trợ</h4>
               <ul className="space-y-2 text-sm text-slate-600">
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Trung tâm trợ giúp</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Trung tâm trợ giúp</a>
                 </li>
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">AirCover</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">AirCover</a>
                 </li>
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Chống phân biệt đối xử</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Chống phân biệt đối xử</a>
                 </li>
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Hỗ trợ người khuyết tật</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Hỗ trợ người khuyết tật</a>
                 </li>
               </ul>
             </div>
@@ -286,16 +287,16 @@ const GuestLayout = () => {
               <h4 className="font-bold mb-4 text-slate-800">Đón tiếp khách</h4>
               <ul className="space-y-2 text-sm text-slate-600">
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Cho thuê BoxHub</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Cho thuê BoxHub</a>
                 </li>
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">AirCover cho Chủ nhà</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">AirCover cho Chủ nhà</a>
                 </li>
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Tài nguyên về đón tiếp khách</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Tài nguyên về đón tiếp khách</a>
                 </li>
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Diễn đàn cộng đồng</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Diễn đàn cộng đồng</a>
                 </li>
               </ul>
             </div>
@@ -303,28 +304,28 @@ const GuestLayout = () => {
               <h4 className="font-bold mb-4 text-slate-800">BoxHub</h4>
               <ul className="space-y-2 text-sm text-slate-600">
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Trang tin tức</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Trang tin tức</a>
                 </li>
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Tìm hiểu các tính năng mới</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Tìm hiểu các tính năng mới</a>
                 </li>
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Cơ hội nghề nghiệp</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Cơ hội nghề nghiệp</a>
                 </li>
                 <li>
-                  <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Nhà đầu tư</a>
+                  <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Nhà đầu tư</a>
                 </li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4 text-slate-800">Theo dõi chúng tôi</h4>
               <div className="flex gap-4">
-                <span className="material-symbols-outlined cursor-pointer text-slate-500 hover:text-[#352166] transition-colors">social_leaderboard</span>
-                <span className="material-symbols-outlined cursor-pointer text-slate-500 hover:text-[#352166] transition-colors">share</span>
-                <span className="material-symbols-outlined cursor-pointer text-slate-500 hover:text-[#352166] transition-colors">alternate_email</span>
+                <span className="material-symbols-outlined cursor-pointer text-slate-500 hover:text-[#4059AD] transition-colors">social_leaderboard</span>
+                <span className="material-symbols-outlined cursor-pointer text-slate-500 hover:text-[#4059AD] transition-colors">share</span>
+                <span className="material-symbols-outlined cursor-pointer text-slate-500 hover:text-[#4059AD] transition-colors">alternate_email</span>
               </div>
               <div className="mt-6">
-                <button className="flex items-center gap-2 text-sm font-bold border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 hover:border-[#352166] hover:text-[#352166] transition-colors">
+                <button className="flex items-center gap-2 text-sm font-bold border border-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-50 hover:border-[#4059AD] hover:text-[#4059AD] transition-colors">
                   <span className="material-symbols-outlined text-sm leading-none">language</span> Tiếng Việt (VN)
                 </button>
               </div>
@@ -333,7 +334,7 @@ const GuestLayout = () => {
           <div className="border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
             <p>© 2026 BoxHub, Inc. · Quyền riêng tư · Điều khoản · Sơ đồ trang web</p>
             <div className="flex gap-4 font-bold">
-              <a className="hover:underline hover:text-[#352166] transition-colors" href="#">Hồ Chí Minh</a>
+              <a className="hover:underline hover:text-[#4059AD] transition-colors" href="#">Hồ Chí Minh</a>
             </div>
           </div>
         </div>
